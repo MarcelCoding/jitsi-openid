@@ -59,6 +59,11 @@ services:
       - '3000:3000'
 ````
 
+To generate the `JITSI_SECRET` you can use the following command:
+```bash
+node -e "console.log(require('crypto').randomBytes(24).toString('base64'));"
+```
+
 ### Jitsi Configuration
 ````bash
 JWT_APP_ID=meet.example.com # see JITSI_ID
