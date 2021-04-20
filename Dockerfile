@@ -4,7 +4,7 @@ ENV PORT=3000
 WORKDIR /app
 
 COPY package*.json .
-RUN npm ci
+RUN npm ci --no-audit
 
 COPY src/ src/
 COPY LICENSE .
