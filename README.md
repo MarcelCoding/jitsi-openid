@@ -66,6 +66,9 @@ node -e "console.log(require('crypto').randomBytes(24).toString('base64'));"
 
 ### Jitsi Configuration
 ````bash
+ENABLE_AUTH=1
+#ENABLE_GUESTS=1
+AUTH_TYPE=jwt
 JWT_APP_ID=meet.example.com # see JITSI_ID
 JWT_APP_SECRET=SECRET # see JITSI_SECRET
 JWT_ACCEPTED_ISSUERS=jitsi
