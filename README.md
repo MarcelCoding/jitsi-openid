@@ -73,7 +73,7 @@ JWT_APP_ID=meet.example.com # see JITSI_ID
 JWT_APP_SECRET=SECRET # see JITSI_SECRET
 JWT_ACCEPTED_ISSUERS=jitsi
 JWT_ACCEPTED_AUDIENCES=jitsi
-TOKEN_AUTH_URL=https://auth.meet.example.com/%7Broom%7D
+TOKEN_AUTH_URL=https://auth.meet.example.com/{room}
 ````
 
 ## License
