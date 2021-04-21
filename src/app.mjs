@@ -32,7 +32,7 @@ const sign = (name, email, id, allowedRoom) => {
   }, JITSI_SECRET);
 };
 
-app.get('/:room', async (req, res) => {
+app.get('/room/:room', async (req, res) => {
   const {sub, name, email} = req.oidc.user;
   const token = sign(name, email, sub, "*");
 
