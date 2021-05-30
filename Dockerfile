@@ -1,4 +1,4 @@
-FROM node:lts-alpine3.12
+FROM node:lts-alpine
 ENV PORT=3000
 
 WORKDIR /app
@@ -11,4 +11,4 @@ COPY LICENSE .
 
 EXPOSE ${PORT}
 
-ENTRYPOINT [ "npm", "run", "start" ]
+ENTRYPOINT ["npm", "run", "start"]
