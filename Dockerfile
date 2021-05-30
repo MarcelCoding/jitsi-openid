@@ -1,14 +1,22 @@
+FROM node:lts-alpine AS builder
+
+WORKDIR /src
+
+COPY package*.json .
+RUN npm ci --no-audit
+
+COPY . .
+
+RUN npm run build
+
 FROM node:lts-alpine
 ENV PORT=3000
 
 WORKDIR /app
 
-COPY package*.json .
-RUN npm ci --no-audit
-
-COPY src/ src/
+COPY --from=builder /src/dist/index.js* .
 COPY LICENSE .
 
 EXPOSE ${PORT}
 
-ENTRYPOINT ["npm", "run", "start"]
+ENTRYPOINT ["node", "index.js"]
