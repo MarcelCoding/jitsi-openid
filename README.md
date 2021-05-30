@@ -29,7 +29,6 @@ docker run \
   -e BASE_URL=https://auth.meet.example.com \
   -e CLIENT_ID=meet.example.com \
   -e SECRET=SECURE_SECRET \
-  --restart always \
   --rm \
   marcelcoding/jitsi-openid:latest
 ```
