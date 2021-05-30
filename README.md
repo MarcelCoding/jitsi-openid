@@ -24,7 +24,7 @@ docker run \
   -p 3000:3000 \
   -e JITSI_SECRET=SECURE_SECRET \
   -e JITSI_URL=https://meet.example.com \
-  -e JITSI_ID=meet.example.com \
+  -e JITSI_SUB=meet.example.com \
   -e ISSUER_BASE_URL=https://id.example.com \
   -e BASE_URL=https://auth.meet.example.com \
   -e CLIENT_ID=meet.example.com \
@@ -47,7 +47,7 @@ services:
       - 'JITSI_SECRET=SECURE_SECRET'             # <- shared with jitsi (JWT_APP_SECRET),
                                                  #    secret to sign jwt tokens
       - 'JITSI_URL=https://meet.example.com'     # <- external url of jitsi
-      - 'JITSI_ID=meet.example.com'              # <- shared with jitsi (JWT_APP_ID),
+      - 'JITSI_SUB=meet.example.com'             # <- shared with jitsi (JWT_APP_ID),
                                                  #    id of jitsi
       - 'ISSUER_BASE_URL=https://id.example.com' # <- base URL of your OpenID Connect provider
                                                  #    Keycloak: https://id.example.com/auth/realms/<realm>
