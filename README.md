@@ -9,7 +9,7 @@ via [OpenID Connect](https://openid.net/connect/).
 
 ## Deployment
 
-This image is available in [DockerHub](https://hub.docker.com/r/marcelcoding/jitsi-openid) and the
+This image is available in [Docker Hub](https://hub.docker.com/r/marcelcoding/jitsi-openid) and the
 [GitHub Container Registry](https://github.com/users/MarcelCoding/packages/container/package/jitsi-openid):
 
 ```
@@ -40,6 +40,7 @@ docker run \
 version: '3.8'
 
 services:
+
   jitsi-openid:
     image: marcelcoding/jitsi-openid:latest
     restart: always

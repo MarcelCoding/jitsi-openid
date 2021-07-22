@@ -1,16 +1,22 @@
-FROM node:lts-alpine AS builder
+ARG NODE_VERSION=14
+
+FROM node:${NODE_VERSION}-alpine AS builder
 
 WORKDIR /src
 
 COPY package*.json .
 RUN npm ci --no-audit
 
-COPY . .
+COPY webpack.config.js .
+COPY tsconfig.json .
+COPY src ./src/
 
 RUN npm run build
 
-FROM node:lts-alpine
+FROM node:${NODE_VERSION}-alpine
+
 ENV PORT=3000
+ENV NODE_ENV=production
 
 WORKDIR /app
 
