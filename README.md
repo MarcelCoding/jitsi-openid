@@ -9,6 +9,8 @@ via [OpenID Connect](https://openid.net/connect/).
 
 ## Deployment
 
+**This guide is based of the [docker setup from jitsi](https://github.com/jitsi/docker-jitsi-meet/).**
+
 This image is available in [Docker Hub](https://hub.docker.com/r/marcelcoding/jitsi-openid) and the
 [GitHub Container Registry](https://github.com/users/MarcelCoding/packages/container/package/jitsi-openid):
 
@@ -45,10 +47,10 @@ services:
     image: marcelcoding/jitsi-openid:latest
     restart: always
     environment:
-      - 'JITSI_SECRET=SECURE_SECRET'             # <- shared with jitsi (JWT_APP_SECRET),
+      - 'JITSI_SECRET=SECURE_SECRET'             # <- shared with jitsi (JWT_APP_SECRET -> see .env from jitsi),
                                                  #    secret to sign jwt tokens
       - 'JITSI_URL=https://meet.example.com'     # <- external url of jitsi
-      - 'JITSI_SUB=meet.example.com'             # <- shared with jitsi (JWT_APP_ID),
+      - 'JITSI_SUB=meet.example.com'             # <- shared with jitsi (JWT_APP_ID -> see .env from jitsi),
                                                  #    id of jitsi
       - 'ISSUER_BASE_URL=https://id.example.com' # <- base URL of your OpenID Connect provider
                                                  #    Keycloak: https://id.example.com/auth/realms/<realm>
@@ -65,7 +67,9 @@ node -e "console.log(require('crypto').randomBytes(24).toString('base64'));"
 ```
 
 ### Jitsi Configuration
+
 ````bash
+# https://github.com/jitsi/docker-jitsi-meet/blob/master/env.example
 ENABLE_AUTH=1
 #ENABLE_GUESTS=1
 AUTH_TYPE=jwt
