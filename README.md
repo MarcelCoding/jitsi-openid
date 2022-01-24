@@ -68,6 +68,8 @@ node -e "console.log(require('crypto').randomBytes(24).toString('base64'));"
 
 ### Jitsi Configuration
 
+If you have problems understating this have a look here: https://github.com/MarcelCoding/jitsi-openid/issues/80
+
 ````bash
 # https://github.com/jitsi/docker-jitsi-meet/blob/master/env.example
 ENABLE_AUTH=1
