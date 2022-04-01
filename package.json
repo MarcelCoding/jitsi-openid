@@ -6,7 +6,7 @@
   },
   "dependencies": {
     "express": "4.17.2",
-    "express-openid-connect": "2.7.0",
+    "express-openid-connect": "2.7.2",
     "jsonwebtoken": "8.5.1"
   },
   "devDependencies": {
