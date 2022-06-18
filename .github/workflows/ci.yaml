@@ -48,7 +48,7 @@ jobs:
         if: matrix.os == 'windows'
         run: mv target/release/jitsi-openid.exe jitsi-openid_${{ matrix.os }}.exe
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: ${{ matrix.channel == 'stable' }}
         with:
           name: jitsi-openid_${{ matrix.os }}
