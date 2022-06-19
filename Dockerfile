@@ -22,7 +22,7 @@ COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
 RUN cargo build --release \
- && rm src/*.rs
+ && rm src/*.rs target/release/deps/jitsi_openid*
 
 COPY ./src ./src
 RUN cargo build --release
