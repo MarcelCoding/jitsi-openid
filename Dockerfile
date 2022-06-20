@@ -1,4 +1,4 @@
-FROM rust:latest AS builder
+FROM rust:slim AS builder
 
 RUN update-ca-certificates
 
@@ -27,7 +27,6 @@ RUN cargo build --release \
 COPY ./src ./src
 RUN cargo build --release
 
-# debian:bullseye-slim
 FROM gcr.io/distroless/cc
 
 ENV LISTEN_ADDR=0.0.0.0:3000
