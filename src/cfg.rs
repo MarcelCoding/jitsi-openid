@@ -1,4 +1,4 @@
-use std::net::{  SocketAddr};
+use std::net::SocketAddr;
 
 use openidconnect::{ClientId, IssuerUrl};
 use serde::Deserialize;

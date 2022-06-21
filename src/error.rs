@@ -6,11 +6,12 @@ pub(crate) enum AppError {
   InvalidCode,
   InvalidState,
   InvalidIdTokenNonce,
-  MissingIdToken,
+  MissingIdTokenAndUserInfoEndpoint,
   InvalidAccessToken,
   MissingAccessTokenHash,
   UnsupportedSigningAlgorithm,
   InternalServerError,
+  UnableToQueryUserInfo,
 }
 
 impl IntoResponse for AppError {
@@ -20,11 +21,12 @@ impl IntoResponse for AppError {
       Self::InvalidCode => (StatusCode::BAD_REQUEST, "Invalid Code"),
       Self::InvalidState => (StatusCode::BAD_REQUEST, "Invalid State"),
       Self::InvalidIdTokenNonce => (StatusCode::BAD_REQUEST, "Invalid Id Token Nonce"),
-      Self::MissingIdToken => (StatusCode::BAD_REQUEST, "Missing Id Token - if you can't configure your IDP to provide an id token, reach out to me to implement some kind of workaround: https://github.com/MarcelCoding/jitsi-openid/issues/new"),
+      Self::MissingIdTokenAndUserInfoEndpoint => (StatusCode::BAD_REQUEST, "Missing Id Token And User Info Endpoint - at least one is missing, you may create an issue to find an workaround if you can't configure your idp to provide either of them: https://github.com/MarcelCoding/jitsi-openid/issues/new "),
       Self::InvalidAccessToken => (StatusCode::BAD_REQUEST, "Invalid Access Token"),
       Self::MissingAccessTokenHash => (StatusCode::BAD_REQUEST, "Missing Access Token Hash - if you can't configure your IDP to provide an access token hash (delivered using the id token), reach out to me to implement some kind of workaround: https://github.com/MarcelCoding/jitsi-openid/issues/new"),
       Self::UnsupportedSigningAlgorithm => (StatusCode::BAD_REQUEST, "Unsupported Signing Algorithm"),
       Self::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
+      Self::UnableToQueryUserInfo => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to Query User Info"),
     }.into_response()
   }
 }

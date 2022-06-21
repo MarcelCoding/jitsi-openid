@@ -1,28 +1,36 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
-use axum::{Extension, headers, Router, Server, TypedHeader};
 use axum::extract::{Path, Query};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
+use axum::{headers, Extension, Router, Server, TypedHeader};
 use axum_extra::extract::CookieJar;
 use config::{Config, Environment};
 use cookie::Cookie;
 use jsonwebtoken::{EncodingKey, Header};
-use openidconnect::{AccessTokenHash, AuthorizationCode, ClientSecret, CsrfToken, Nonce, OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse};
-use openidconnect::core::{CoreAuthenticationFlow, CoreClient, CoreProviderMetadata};
+use openidconnect::core::{
+  CoreAuthenticationFlow, CoreClient, CoreProviderMetadata, CoreTokenResponse, CoreUserInfoClaims,
+};
 use openidconnect::reqwest::async_http_client;
+use openidconnect::{
+  AccessTokenHash, AuthorizationCode, ClientSecret, ConfigurationError, CsrfToken, Nonce,
+  OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse,
+};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Arc;
 use time::{Duration, OffsetDateTime};
 use tokio::signal;
 use tokio::sync::RwLock;
 use tracing::{error, info};
 use uuid::Uuid;
 
-use crate::AppError::{InternalServerError, InvalidAccessToken, InvalidIdTokenNonce, InvalidState, MissingAccessTokenHash, MissingIdToken, UnsupportedSigningAlgorithm};
 use crate::cfg::Cfg;
-use crate::error::AppError::{InvalidCode, InvalidSession};
 use crate::error::AppError;
+use crate::error::AppError::{InvalidCode, InvalidSession};
+use crate::AppError::{
+  InternalServerError, InvalidAccessToken, InvalidIdTokenNonce, InvalidState,
+  MissingAccessTokenHash, MissingIdTokenAndUserInfoEndpoint, UnableToQueryUserInfo,
+  UnsupportedSigningAlgorithm,
+};
 
 mod cfg;
 mod error;
@@ -49,12 +57,21 @@ async fn main() -> anyhow::Result<()> {
 
   let store = Store::new(RwLock::new(HashMap::new()));
 
-  info!("Using identity provider: {} and client-id: {}", &config.issuer_url.url(),  *config.client_id);
+  info!(
+    "Using identity provider: {} and client-id: {}",
+    &config.issuer_url.url(),
+    *config.client_id
+  );
 
-  let provider_metadata: CoreProviderMetadata = CoreProviderMetadata::discover_async(config.issuer_url.clone(), async_http_client).await?;
+  let provider_metadata: CoreProviderMetadata =
+    CoreProviderMetadata::discover_async(config.issuer_url.clone(), async_http_client).await?;
 
-  let client: CoreClient = CoreClient::from_provider_metadata(provider_metadata, config.client_id.clone(), Some(config.client_secret.clone()))
-    .set_redirect_uri(RedirectUrl::from_url(config.base_url.join("callback")?));
+  let client: CoreClient = CoreClient::from_provider_metadata(
+    provider_metadata,
+    config.client_id.clone(),
+    Some(config.client_secret.clone()),
+  )
+  .set_redirect_uri(RedirectUrl::from_url(config.base_url.join("callback")?));
   // TODO: .set_revocation_uri ?
 
   info!("Successfully queried identity provider metadata");
@@ -66,7 +83,11 @@ async fn main() -> anyhow::Result<()> {
     .layer(Extension(client))
     .layer(Extension(config.clone()));
 
-  info!("Listening on {}, have a try on: {}/{{name}}", config.listen_addr, config.base_url.join("room")?);
+  info!(
+    "Listening on {}, have a try on: {}/{{name}}",
+    config.listen_addr,
+    config.base_url.join("room")?
+  );
 
   Server::bind(&config.listen_addr)
     .serve(app.into_make_service())
@@ -113,22 +134,37 @@ async fn room(
 ) -> impl IntoResponse {
   let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-  let (auth_url, csrf_token, nonce) = client.authorize_url(
-    CoreAuthenticationFlow::AuthorizationCode,
-    CsrfToken::new_random,
-    Nonce::new_random,
-  )
+  let (auth_url, csrf_token, nonce) = client
+    .authorize_url(
+      CoreAuthenticationFlow::AuthorizationCode,
+      CsrfToken::new_random,
+      Nonce::new_random,
+    )
     .set_pkce_challenge(pkce_challenge)
     .add_scope(Scope::new("profile".to_string()))
     .add_scope(Scope::new("email".to_string()))
     .url();
 
   let session_id = Uuid::new_v4();
-  store.write().await.insert(session_id, Session { room, csrf_token, nonce, pkce_verifier });
+  store.write().await.insert(
+    session_id,
+    Session {
+      room,
+      csrf_token,
+      nonce,
+      pkce_verifier,
+    },
+  );
 
   // Build the cookie
   let cookie = Cookie::build(COOKIE_NAME, session_id.to_string())
-    .domain(config.base_url.host().expect("Missing host in base url").to_string())
+    .domain(
+      config
+        .base_url
+        .host()
+        .expect("Missing host in base url")
+        .to_string(),
+    )
     .path(config.base_url.path().to_string())
     .secure(config.base_url.scheme() == "https")
     .http_only(true)
@@ -167,41 +203,68 @@ async fn callback(
     return Err(InvalidState);
   }
 
-  let response = match client.exchange_code(callback.code)
+  let response = client
+    .exchange_code(callback.code)
     .set_pkce_verifier(session.pkce_verifier)
     .request_async(async_http_client)
-    .await {
-    Ok(response) => response,
-    Err(_) => return Err(InvalidCode),
+    .await
+    .map_err(|_| InvalidCode)?;
+
+  let jitsi_user = match id_token_claims(&client, &response, &session.nonce)? {
+    None => match user_info_claims(&client, &response).await? {
+      None => return Err(MissingIdTokenAndUserInfoEndpoint),
+      Some(user) => user,
+    },
+    Some(user) => user,
   };
 
+  let jwt = create_jitsi_jwt(
+    jitsi_user,
+    "jitsi".to_string(),
+    "jitsi".to_string(),
+    config.jitsi_sub,
+    "*".to_string(),
+    config.jitsi_secret,
+  )
+  .map_err(|err| {
+    error!("Unable to create jwt: {}", err);
+    InternalServerError
+  })?;
+
+  let mut url = config.jitsi_url.join(&session.room).unwrap();
+  url.query_pairs_mut().append_pair("jwt", &jwt);
+  Ok(Redirect::to(url.as_str()))
+}
+
+fn id_token_claims(
+  client: &CoreClient,
+  response: &CoreTokenResponse,
+  nonce: &Nonce,
+) -> Result<Option<JitsiUser>, AppError> {
   let id_token = match response.id_token() {
     Some(id_token) => id_token,
-    None => return Err(MissingIdToken),
+    None => return Ok(None),
   };
 
-  let claims = match id_token.claims(&client.id_token_verifier(), &session.nonce) {
-    Ok(claims) => claims,
-    Err(_) => return Err(InvalidIdTokenNonce),
-  };
+  let claims = id_token
+    .claims(&client.id_token_verifier(), nonce)
+    .map_err(|_| InvalidIdTokenNonce)?;
 
   match claims.access_token_hash() {
     Some(expected_access_token_hash) => {
-      let algorithm = match id_token.signing_alg() {
-        Ok(algorithm) => algorithm,
-        Err(_) => return Err(UnsupportedSigningAlgorithm),
-      };
+      let algorithm = id_token
+        .signing_alg()
+        .map_err(|_| UnsupportedSigningAlgorithm)?;
 
-      let actual_access_token_hash = match AccessTokenHash::from_token(response.access_token(), &algorithm) {
-        Ok(actual_access_token_hash) => actual_access_token_hash,
-        Err(_) => return Err(UnsupportedSigningAlgorithm),
-      };
+      let actual_access_token_hash =
+        AccessTokenHash::from_token(response.access_token(), &algorithm)
+          .map_err(|_| UnsupportedSigningAlgorithm)?;
 
       if &actual_access_token_hash != expected_access_token_hash {
         return Err(InvalidAccessToken);
       }
     }
-    None => return Err(MissingAccessTokenHash)
+    None => return Err(MissingAccessTokenHash),
   };
 
   let uid = match claims.preferred_username() {
@@ -209,24 +272,44 @@ async fn callback(
     None => claims.subject().to_string(),
   };
 
-  match create_jitsi_jwt(
-    uid,
-    claims.email().map(|email| email.to_string()),
-    claims.name().and_then(|name| name.get(None)).map(|name| name.to_string()),
-    None,
-    "jitsi".to_string(),
-    "jitsi".to_string(),
-    config.jitsi_sub,
-    "*".to_string(),
-    config.jitsi_secret,
-  ) {
-    Ok(jwt) => {
-      let mut url = config.jitsi_url.join(&session.room).unwrap();
-      url.query_pairs_mut().append_pair("jwt", &jwt);
-      Ok(Redirect::to(url.as_str()))
+  Ok(Some(JitsiUser {
+    id: uid,
+    email: claims.email().map(|email| email.to_string()),
+    name: claims
+      .name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+    avatar: None,
+  }))
+}
+
+async fn user_info_claims(
+  client: &CoreClient,
+  response: &CoreTokenResponse,
+) -> Result<Option<JitsiUser>, AppError> {
+  match client.user_info(response.access_token().clone(), None) {
+    Ok(request) => {
+      let claims: CoreUserInfoClaims = request
+        .request_async(async_http_client)
+        .await
+        .map_err(|_| UnableToQueryUserInfo)?;
+
+      Ok(Some(JitsiUser {
+        id: match claims.preferred_username() {
+          Some(name) => name.to_string(),
+          None => claims.subject().to_string(),
+        },
+        email: claims.email().map(|email| email.to_string()),
+        name: claims
+          .name()
+          .and_then(|name| name.get(None))
+          .map(|name| name.to_string()),
+        avatar: None,
+      }))
     }
+    Err(ConfigurationError::MissingUrl(_)) => Ok(None),
     Err(err) => {
-      error!("Unable to create jwt: {}", err);
+      error!("Unable to find user info url: {}", err);
       Err(InternalServerError)
     }
   }
@@ -253,19 +336,33 @@ struct JitsiContext {
 
 #[derive(Serialize)]
 struct JitsiUser {
-  avatar: Option<String>,
-  name: Option<String>,
-  email: Option<String>,
   id: String,
+  email: Option<String>,
+  name: Option<String>,
+  avatar: Option<String>,
 }
 
-fn create_jitsi_jwt(uid: String, email: Option<String>, name: Option<String>, avatar: Option<String>, aud: String, iss: String, sub: String, room: String, secret: String) -> anyhow::Result<String> {
+fn create_jitsi_jwt(
+  user: JitsiUser,
+  aud: String,
+  iss: String,
+  sub: String,
+  room: String,
+  secret: String,
+) -> anyhow::Result<String> {
   let iat = OffsetDateTime::now_utc();
   let exp = iat + Duration::days(1);
 
-  let user = JitsiUser { avatar, name, email, id: uid };
   let context = JitsiContext { user, group: None };
-  let claims = JitsiClaims { context, aud, iss, sub, room, iat, exp };
+  let claims = JitsiClaims {
+    context,
+    aud,
+    iss,
+    sub,
+    room,
+    iat,
+    exp,
+  };
 
   let token = jsonwebtoken::encode(
     &Header::default(),
@@ -283,8 +380,8 @@ mod jwt_numeric_date {
 
   /// Serializes an OffsetDateTime to a Unix timestamp (milliseconds since 1970/1/1T00:00:00T)
   pub fn serialize<S>(date: &OffsetDateTime, serializer: S) -> Result<S::Ok, S::Error>
-    where
-      S: Serializer,
+  where
+    S: Serializer,
   {
     let timestamp = date.unix_timestamp();
     serializer.serialize_i64(timestamp)
