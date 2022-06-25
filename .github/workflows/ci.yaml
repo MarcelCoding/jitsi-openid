@@ -16,7 +16,6 @@ jobs:
 
     strategy:
       matrix:
-        channel: [ stable ]
         os: [ windows, ubuntu, macos ]
 
     steps:
@@ -37,7 +36,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       - name: Build
-        continue-on-error: ${{ matrix.channel != 'stable' }}
         run: cargo build --release
 
       - name: Rename binary
@@ -49,13 +47,12 @@ jobs:
         run: mv target/release/jitsi-openid.exe jitsi-openid_${{ matrix.os }}.exe
 
       - uses: actions/upload-artifact@v2
-        if: ${{ matrix.channel == 'stable' }}
         with:
           name: jitsi-openid_${{ matrix.os }}
           path: jitsi-openid_${{ matrix.os }}*
 
       - uses: alexellis/upload-assets@0.3.0
-        if: startsWith(github.ref, 'refs/tags/') && matrix.channel == 'stable'
+        if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
