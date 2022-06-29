@@ -275,6 +275,7 @@ fn id_token_claims(
   Ok(Some(JitsiUser {
     id: uid,
     email: claims.email().map(|email| email.to_string()),
+    affiliation: claims.affiliation().map(|affiliation| affiliation.to_string()),
     name: claims
       .name()
       .and_then(|name| name.get(None))
@@ -300,6 +301,7 @@ async fn user_info_claims(
           None => claims.subject().to_string(),
         },
         email: claims.email().map(|email| email.to_string()),
+        affiliation: claims.affiliation().map(|affiliation| affiliation.to_string()),
         name: claims
           .name()
           .and_then(|name| name.get(None))
@@ -338,6 +340,7 @@ struct JitsiContext {
 struct JitsiUser {
   id: String,
   email: Option<String>,
+  affiliation: Option<String>,
   name: Option<String>,
   avatar: Option<String>,
 }
