@@ -1,3 +1,6 @@
+use std::collections::HashMap;
+use std::sync::Arc;
+
 use axum::extract::{Path, Query};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
@@ -7,16 +10,19 @@ use config::{Config, Environment};
 use cookie::Cookie;
 use jsonwebtoken::{EncodingKey, Header};
 use openidconnect::core::{
-  CoreAuthenticationFlow, CoreClient, CoreProviderMetadata, CoreTokenResponse, CoreUserInfoClaims,
+  CoreAuthDisplay, CoreAuthPrompt, CoreAuthenticationFlow, CoreClient, CoreErrorResponseType,
+  CoreGenderClaim, CoreJsonWebKey, CoreJsonWebKeyType, CoreJsonWebKeyUse,
+  CoreJweContentEncryptionAlgorithm, CoreJwsSigningAlgorithm, CoreProviderMetadata,
+  CoreRevocableToken, CoreRevocationErrorResponse, CoreTokenIntrospectionResponse, CoreTokenType,
 };
 use openidconnect::reqwest::async_http_client;
 use openidconnect::{
-  AccessTokenHash, AuthorizationCode, ClientSecret, ConfigurationError, CsrfToken, Nonce,
-  OAuth2TokenResponse, PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, TokenResponse,
+  AccessTokenHash, AdditionalClaims, AuthorizationCode, Client, ClientSecret, ConfigurationError,
+  CsrfToken, EmptyExtraTokenFields, IdTokenFields, Nonce, OAuth2TokenResponse, PkceCodeChallenge,
+  PkceCodeVerifier, RedirectUrl, Scope, StandardErrorResponse, StandardTokenResponse,
+  TokenResponse, UserInfoClaims,
 };
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::sync::Arc;
 use time::{Duration, OffsetDateTime};
 use tokio::signal;
 use tokio::sync::RwLock;
@@ -46,6 +52,44 @@ struct Session {
   pkce_verifier: PkceCodeVerifier,
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+struct MyClaims {
+  affiliation: Option<String>,
+}
+
+impl AdditionalClaims for MyClaims {}
+
+type MyUserInfoClaims = UserInfoClaims<MyClaims, CoreGenderClaim>;
+
+type MyIdTokenFields = IdTokenFields<
+  MyClaims,
+  EmptyExtraTokenFields,
+  CoreGenderClaim,
+  CoreJweContentEncryptionAlgorithm,
+  CoreJwsSigningAlgorithm,
+  CoreJsonWebKeyType,
+>;
+
+type MyTokenResponse = StandardTokenResponse<MyIdTokenFields, CoreTokenType>;
+
+type MyClient = Client<
+  MyClaims,
+  CoreAuthDisplay,
+  CoreGenderClaim,
+  CoreJweContentEncryptionAlgorithm,
+  CoreJwsSigningAlgorithm,
+  CoreJsonWebKeyType,
+  CoreJsonWebKeyUse,
+  CoreJsonWebKey,
+  CoreAuthPrompt,
+  StandardErrorResponse<CoreErrorResponseType>,
+  MyTokenResponse,
+  CoreTokenType,
+  CoreTokenIntrospectionResponse,
+  CoreRevocableToken,
+  CoreRevocationErrorResponse,
+>;
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
   tracing_subscriber::fmt::init();
@@ -66,7 +110,7 @@ async fn main() -> anyhow::Result<()> {
   let provider_metadata: CoreProviderMetadata =
     CoreProviderMetadata::discover_async(config.issuer_url.clone(), async_http_client).await?;
 
-  let client: CoreClient = CoreClient::from_provider_metadata(
+  let client = MyClient::from_provider_metadata(
     provider_metadata,
     config.client_id.clone(),
     Some(config.client_secret.clone()),
@@ -184,7 +228,7 @@ struct Callback {
 async fn callback(
   Query(callback): Query<Callback>,
   TypedHeader(cookies): TypedHeader<headers::Cookie>,
-  Extension(client): Extension<CoreClient>,
+  Extension(client): Extension<MyClient>,
   Extension(store): Extension<Store>,
   Extension(config): Extension<Cfg>,
 ) -> Result<impl IntoResponse, AppError> {
@@ -237,8 +281,8 @@ async fn callback(
 }
 
 fn id_token_claims(
-  client: &CoreClient,
-  response: &CoreTokenResponse,
+  client: &MyClient,
+  response: &MyTokenResponse,
   nonce: &Nonce,
 ) -> Result<Option<JitsiUser>, AppError> {
   let id_token = match response.id_token() {
@@ -275,7 +319,7 @@ fn id_token_claims(
   Ok(Some(JitsiUser {
     id: uid,
     email: claims.email().map(|email| email.to_string()),
-    affiliation: claims.affiliation().map(|affiliation| affiliation.to_string()),
+    affiliation: claims.additional_claims().affiliation.clone(),
     name: claims
       .name()
       .and_then(|name| name.get(None))
@@ -285,12 +329,12 @@ fn id_token_claims(
 }
 
 async fn user_info_claims(
-  client: &CoreClient,
-  response: &CoreTokenResponse,
+  client: &MyClient,
+  response: &MyTokenResponse,
 ) -> Result<Option<JitsiUser>, AppError> {
   match client.user_info(response.access_token().clone(), None) {
     Ok(request) => {
-      let claims: CoreUserInfoClaims = request
+      let claims: MyUserInfoClaims = request
         .request_async(async_http_client)
         .await
         .map_err(|_| UnableToQueryUserInfo)?;
@@ -301,7 +345,7 @@ async fn user_info_claims(
           None => claims.subject().to_string(),
         },
         email: claims.email().map(|email| email.to_string()),
-        affiliation: claims.affiliation().map(|affiliation| affiliation.to_string()),
+        affiliation: claims.additional_claims().affiliation.clone(),
         name: claims
           .name()
           .and_then(|name| name.get(None))
