@@ -10,10 +10,10 @@ use config::{Config, Environment};
 use cookie::Cookie;
 use jsonwebtoken::{EncodingKey, Header};
 use openidconnect::core::{
-  CoreAuthDisplay, CoreAuthPrompt, CoreAuthenticationFlow, CoreClient, CoreErrorResponseType,
-  CoreGenderClaim, CoreJsonWebKey, CoreJsonWebKeyType, CoreJsonWebKeyUse,
-  CoreJweContentEncryptionAlgorithm, CoreJwsSigningAlgorithm, CoreProviderMetadata,
-  CoreRevocableToken, CoreRevocationErrorResponse, CoreTokenIntrospectionResponse, CoreTokenType,
+  CoreAuthDisplay, CoreAuthPrompt, CoreAuthenticationFlow, CoreErrorResponseType, CoreGenderClaim,
+  CoreJsonWebKey, CoreJsonWebKeyType, CoreJsonWebKeyUse, CoreJweContentEncryptionAlgorithm,
+  CoreJwsSigningAlgorithm, CoreProviderMetadata, CoreRevocableToken, CoreRevocationErrorResponse,
+  CoreTokenIntrospectionResponse, CoreTokenType,
 };
 use openidconnect::reqwest::async_http_client;
 use openidconnect::{
@@ -171,7 +171,7 @@ async fn shutdown_signal() {
 
 async fn room(
   Path(room): Path<String>,
-  Extension(client): Extension<CoreClient>,
+  Extension(client): Extension<MyClient>,
   Extension(store): Extension<Store>,
   Extension(config): Extension<Cfg>,
   jar: CookieJar,
