@@ -18,9 +18,9 @@ use openidconnect::core::{
 use openidconnect::reqwest::async_http_client;
 use openidconnect::{
   AccessTokenHash, AdditionalClaims, AuthorizationCode, Client, ClientSecret, ConfigurationError,
-  CsrfToken, EmptyExtraTokenFields, IdTokenFields, Nonce, OAuth2TokenResponse, PkceCodeChallenge,
-  PkceCodeVerifier, RedirectUrl, Scope, StandardErrorResponse, StandardTokenResponse,
-  TokenResponse, UserInfoClaims,
+  CsrfToken, EmptyExtraTokenFields, IdTokenClaims, IdTokenFields, Nonce, OAuth2TokenResponse,
+  PkceCodeChallenge, PkceCodeVerifier, RedirectUrl, Scope, StandardErrorResponse,
+  StandardTokenResponse, TokenResponse, UserInfoClaims,
 };
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
@@ -320,10 +320,7 @@ fn id_token_claims(
     id: uid,
     email: claims.email().map(|email| email.to_string()),
     affiliation: claims.additional_claims().affiliation.clone(),
-    name: claims
-      .name()
-      .and_then(|name| name.get(None))
-      .map(|name| name.to_string()),
+    name: get_display_name_id_token(claims),
     avatar: None,
   }))
 }
@@ -346,10 +343,7 @@ async fn user_info_claims(
         },
         email: claims.email().map(|email| email.to_string()),
         affiliation: claims.additional_claims().affiliation.clone(),
-        name: claims
-          .name()
-          .and_then(|name| name.get(None))
-          .map(|name| name.to_string()),
+        name: get_display_name(&claims),
         avatar: None,
       }))
     }
@@ -433,4 +427,80 @@ mod jwt_numeric_date {
     let timestamp = date.unix_timestamp();
     serializer.serialize_i64(timestamp)
   }
+}
+
+fn get_display_name_id_token(claims: &IdTokenClaims<MyClaims, CoreGenderClaim>) -> Option<String> {
+  if let Some(name) = claims
+    .name()
+    .or_else(|| claims.name())
+    .and_then(|name| name.get(None))
+    .map(|name| name.to_string())
+  {
+    return Some(name);
+  }
+
+  let name = [
+    claims
+      .given_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+    claims
+      .middle_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+    claims
+      .family_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+  ];
+
+  if !name.is_empty() {
+    return Some(
+      name
+        .into_iter()
+        .flatten()
+        .collect::<Vec<String>>()
+        .join(" "),
+    );
+  }
+
+  claims.preferred_username().map(|name| name.to_string())
+}
+
+fn get_display_name(claims: &MyUserInfoClaims) -> Option<String> {
+  if let Some(name) = claims
+    .name()
+    .or_else(|| claims.name())
+    .and_then(|name| name.get(None))
+    .map(|name| name.to_string())
+  {
+    return Some(name);
+  }
+
+  let name = [
+    claims
+      .given_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+    claims
+      .middle_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+    claims
+      .family_name()
+      .and_then(|name| name.get(None))
+      .map(|name| name.to_string()),
+  ];
+
+  if !name.is_empty() {
+    return Some(
+      name
+        .into_iter()
+        .flatten()
+        .collect::<Vec<String>>()
+        .join(" "),
+    );
+  }
+
+  claims.preferred_username().map(|name| name.to_string())
 }
