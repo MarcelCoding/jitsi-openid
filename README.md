@@ -60,9 +60,9 @@ services:
       - '3000:3000'
 ````
 
-To generate the `JITSI_SECRET` you can use the following command:
+To generate the `JITSI_SECRET` you can use one of the following command:
 ```bash
-node -e "console.log(require('crypto').randomBytes(24).toString('base64'));"
+cat /dev/urandom | tr -dc a-zA-Z0-9 | head -c128; echo
 ```
 
 ### Jitsi Configuration
