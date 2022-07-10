@@ -13,7 +13,7 @@ pub(crate) enum AppError {
   UnsupportedSigningAlgorithm,
   InternalServerError,
   UnableToQueryUserInfo,
-  AuthenticationContextWasNtFulfilled,
+  AuthenticationContextWasNotFulfilled,
 }
 
 impl IntoResponse for AppError {
@@ -30,7 +30,7 @@ impl IntoResponse for AppError {
       Self::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
       Self::UnableToQueryUserInfo => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to Query User Info"),
       Self::IdTokenRequired => (StatusCode::INTERNAL_SERVER_ERROR, "An authentication context requirement is configured. To validate this requirement an id token is required ... no id token was provided"),
-      Self::AuthenticationContextWasNtFulfilled => (StatusCode::BAD_REQUEST, "An authentication context requirement is configured. No one or not the correct one was fulfilled."),
+      Self::AuthenticationContextWasNotFulfilled => (StatusCode::BAD_REQUEST, "An authentication context requirement is configured. No one or not the correct one was fulfilled."),
     }.into_response()
   }
 }

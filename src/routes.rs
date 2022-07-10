@@ -18,7 +18,7 @@ use time::{Duration, OffsetDateTime};
 use tracing::error;
 use uuid::Uuid;
 
-use crate::AppError::{AuthenticationContextWasNtFulfilled, IdTokenRequired};
+use crate::AppError::{AuthenticationContextWasNotFulfilled, IdTokenRequired};
 use crate::{
   AppError, Cfg, InternalServerError, InvalidAccessToken, InvalidCode, InvalidIdTokenNonce,
   InvalidSession, InvalidState, MissingAccessTokenHash, MissingIdTokenAndUserInfoEndpoint,
@@ -173,10 +173,10 @@ fn id_token_claims(
 
   if let Some(auth_context) = claims.auth_context_ref() {
     if !config.acr_values.contains(auth_context) {
-      return Err(AuthenticationContextWasNtFulfilled);
+      return Err(AuthenticationContextWasNotFulfilled);
     }
   } else if !config.acr_values.is_empty() {
-    return Err(AuthenticationContextWasNtFulfilled);
+    return Err(AuthenticationContextWasNotFulfilled);
   }
 
   match claims.access_token_hash() {
