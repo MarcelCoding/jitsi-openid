@@ -81,7 +81,7 @@ JWT_ACCEPTED_AUDIENCES=jitsi
 TOKEN_AUTH_URL=https://auth.meet.example.com/room/{room}
 ````
 
-### Jitsi JWT's
+### Jitsi JWTs
 
 The JWTs are populated using the data returned by your IDP.
 This includes the user id, email and name.
