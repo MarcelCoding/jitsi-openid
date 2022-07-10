@@ -1,8 +1,5 @@
 # Jitsi OpenID
 
-[![Releases](https://img.shields.io/github/v/tag/MarcelCoding/jitsi-openid?label=latest%20version&style=flat-square)](https://github.com/marcelcoding/jitsi-openid/releases)
-[![Build](https://img.shields.io/github/workflow/status/MarcelCoding/jitsi-openid/CI?label=CI&style=flat-square)](https://github.com/marcelcoding/jitsi-openid/actions)
-
 Jitsi OpenID is an authentication adapter to provide [jitsi](https://jitsi.org/) the ability to use single sign on
 via [OpenID Connect](https://openid.net/connect/).
 
@@ -56,6 +53,9 @@ services:
       - 'BASE_URL=https://auth.meet.example.com' # <- base URL of this application
       - 'CLIENT_ID=meet.example.com'             # <- OpenID Connect Client ID
       - 'CLIENT_SECRET=SECURE_SECRET'            # <- OpenID Connect Client secret
+    # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
+                                                 #    space seperated list of allowed actions (OPTIONAL), see
+                                                 #    https://github.com/MarcelCoding/jitsi-openid/issues/122
     ports:
       - '3000:3000'
 ````
@@ -80,6 +80,19 @@ JWT_ACCEPTED_ISSUERS=jitsi
 JWT_ACCEPTED_AUDIENCES=jitsi
 TOKEN_AUTH_URL=https://auth.meet.example.com/room/{room}
 ````
+
+### Jitsi JWT's
+
+The JWTs are populated using the data returned by your IDP.
+This includes the user id, email and name.
+
+The `sub` extracted from the `prefered_username` field, if that isn't preset the `sub` field is used.
+
+The `name` is extracted from the `name` field, if that isn't preset a concatenation of `given_name`, `middle_name` and `family_name` is used. If all tree of them are also not present the `prefered_username` is used.
+
+Translations are not respected: https://github.com/MarcelCoding/jitsi-openid/issues/117#issuecomment-1172406703
+
+The `affiliation` is straight up passed, without any modifications or alternatives. It can be used to restrict the permissions a user has in a specific room in jitsi. See https://github.com/jitsi-contrib/prosody-plugins/tree/main/token_affiliation for more information.
 
 ## License
 

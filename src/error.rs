@@ -7,11 +7,13 @@ pub(crate) enum AppError {
   InvalidState,
   InvalidIdTokenNonce,
   MissingIdTokenAndUserInfoEndpoint,
+  IdTokenRequired,
   InvalidAccessToken,
   MissingAccessTokenHash,
   UnsupportedSigningAlgorithm,
   InternalServerError,
   UnableToQueryUserInfo,
+  AuthenticationContextWasNtFulfilled,
 }
 
 impl IntoResponse for AppError {
@@ -27,6 +29,8 @@ impl IntoResponse for AppError {
       Self::UnsupportedSigningAlgorithm => (StatusCode::BAD_REQUEST, "Unsupported Signing Algorithm"),
       Self::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error"),
       Self::UnableToQueryUserInfo => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to Query User Info"),
+      Self::IdTokenRequired => (StatusCode::INTERNAL_SERVER_ERROR, "An authentication context requirement is configured. To validate this requirement an id token is required ... no id token was provided"),
+      Self::AuthenticationContextWasNtFulfilled => (StatusCode::BAD_REQUEST, "An authentication context requirement is configured. No one or not the correct one was fulfilled."),
     }.into_response()
   }
 }

@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 
-use openidconnect::{ClientId, IssuerUrl};
-use serde::Deserialize;
+use openidconnect::{AuthenticationContextClass, ClientId, IssuerUrl};
+use serde::{Deserialize, Deserializer};
 use url::Url;
 
 use crate::ClientSecret;
@@ -19,8 +19,24 @@ pub(crate) struct Cfg {
   pub(crate) client_secret: ClientSecret,
   #[serde(default = "default_listen_addr")]
   pub(crate) listen_addr: SocketAddr,
+  #[serde(deserialize_with = "string_array")]
+  pub(crate) acr_values: Vec<AuthenticationContextClass>,
 }
 
 fn default_listen_addr() -> SocketAddr {
   ([127, 0, 0, 1], 3000).into()
+}
+
+/// Serializes an OffsetDateTime to a Unix timestamp (milliseconds since 1970/1/1T00:00:00T)
+pub fn string_array<'a, D: Deserializer<'a>>(
+  deserializer: D,
+) -> Result<Vec<AuthenticationContextClass>, D::Error> {
+  let input: String = Deserialize::deserialize(deserializer)?;
+
+  let values = input
+    .split(' ')
+    .map(|acr| AuthenticationContextClass::new(acr.to_string()))
+    .collect();
+
+  Ok(values)
 }
