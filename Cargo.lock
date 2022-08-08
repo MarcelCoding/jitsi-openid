@@ -728,7 +728,8 @@ checksum = "18a6dbe30758c9f83eb00cbea4ac95966305f5a7772f3f42ebfc7fc7eddbd8e1"
 [[package]]
 name = "openidconnect"
 version = "2.3.2"
-source = "git+https://github.com/MarcelCoding/openidconnect-rs#9e4b4724e85f5cde8b47fda42d671ded1fc6a382"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e26afc60b2bf11b9a039db1f3a3c0d5fe201eebdbe646a8ecb8342c8240e3271"
 dependencies = [
  "base64",
  "chrono",
