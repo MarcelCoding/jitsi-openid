@@ -53,8 +53,10 @@ async fn room(
     .add_scope(Scope::new("profile".to_string()))
     .add_scope(Scope::new("email".to_string()));
 
-  for class in config.acr_values {
-    request = request.add_auth_context_value(class);
+  if let Some(acr_values) = config.acr_values {
+    for class in acr_values {
+      request = request.add_auth_context_value(class);
+    }
   }
 
   let (auth_url, csrf_token, nonce) = request.url();
@@ -159,7 +161,7 @@ fn id_token_claims(
   let id_token = match response.id_token() {
     Some(id_token) => id_token,
     None => {
-      return if config.acr_values.is_empty() {
+      return if config.acr_values.is_none() {
         Ok(None)
       } else {
         Err(IdTokenRequired)
@@ -171,12 +173,14 @@ fn id_token_claims(
     .claims(&client.id_token_verifier(), nonce)
     .map_err(|_| InvalidIdTokenNonce)?;
 
-  if let Some(auth_context) = claims.auth_context_ref() {
-    if !config.acr_values.contains(auth_context) {
+  if let Some(acr_values) = &config.acr_values {
+    if let Some(auth_context) = claims.auth_context_ref() {
+      if !acr_values.contains(auth_context) {
+        return Err(AuthenticationContextWasNotFulfilled);
+      }
+    } else {
       return Err(AuthenticationContextWasNotFulfilled);
     }
-  } else if !config.acr_values.is_empty() {
-    return Err(AuthenticationContextWasNotFulfilled);
   }
 
   match claims.access_token_hash() {

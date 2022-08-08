@@ -19,8 +19,9 @@ pub(crate) struct Cfg {
   pub(crate) client_secret: ClientSecret,
   #[serde(default = "default_listen_addr")]
   pub(crate) listen_addr: SocketAddr,
+  #[serde(default)]
   #[serde(deserialize_with = "string_array")]
-  pub(crate) acr_values: Vec<AuthenticationContextClass>,
+  pub(crate) acr_values: Option<Vec<AuthenticationContextClass>>,
 }
 
 fn default_listen_addr() -> SocketAddr {
@@ -30,7 +31,7 @@ fn default_listen_addr() -> SocketAddr {
 /// Serializes an OffsetDateTime to a Unix timestamp (milliseconds since 1970/1/1T00:00:00T)
 pub fn string_array<'a, D: Deserializer<'a>>(
   deserializer: D,
-) -> Result<Vec<AuthenticationContextClass>, D::Error> {
+) -> Result<Option<Vec<AuthenticationContextClass>>, D::Error> {
   let input: String = Deserialize::deserialize(deserializer)?;
 
   let values = input
@@ -38,5 +39,5 @@ pub fn string_array<'a, D: Deserializer<'a>>(
     .map(|acr| AuthenticationContextClass::new(acr.to_string()))
     .collect();
 
-  Ok(values)
+  Ok(Some(values))
 }
