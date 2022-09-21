@@ -87,7 +87,7 @@ async fn room(
     .max_age(Duration::minutes(30))
     .finish();
 
-  (jar.add(cookie), Redirect::to(&auth_url.to_string()))
+  (jar.add(cookie), Redirect::to(auth_url.as_str()))
 }
 
 #[derive(Deserialize)]

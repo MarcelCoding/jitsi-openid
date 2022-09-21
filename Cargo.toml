@@ -4,8 +4,8 @@ version = "2.0.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.20", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
-openidconnect = { version = "2.3", features = ["reqwest", "rustls-tls"], default-features = false }
+tokio = { version = "1.21", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
+openidconnect = { git = "https://github.com/MarcelCoding/openidconnect-rs.git", branch = "supported_id_token_sign_algs", version = "2.3", features = ["reqwest", "rustls-tls", ], default-features = false }
 axum = { version = "0.5", features = ["http1", "query", "headers"], default-features = false }
 axum-extra = { version = "0.3", features = ["cookie"] }
 serde = { version = "1.0", features = ["derive"] }
@@ -17,7 +17,7 @@ cookie = "0.16"
 config = "0.13"
 anyhow = "1.0"
 time = "0.3"
-url = "2.2"
+url = "2.3"
 
 [profile.release]
 lto = true
