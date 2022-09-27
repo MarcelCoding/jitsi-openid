@@ -750,7 +750,7 @@ checksum = "e82dad04139b71a90c080c8463fe0dc7902db5192d939bd0950f074d014339e1"
 [[package]]
 name = "openidconnect"
 version = "2.3.3"
-source = "git+https://github.com/MarcelCoding/openidconnect-rs.git?branch=supported_id_token_sign_algs#167f610c495c118c936491cf9a2afff8df5ca513"
+source = "git+https://github.com/MarcelCoding/openidconnect-rs.git?branch=supported_id_token_sign_algs#fc71b480eb97d16502897a67f40086b720419835"
 dependencies = [
  "base64",
  "chrono",
