@@ -171,7 +171,7 @@ fn id_token_claims(
 
   let claims = id_token
     .claims(&client.id_token_verifier(), nonce)
-    .map_err(|_| InvalidIdTokenNonce)?;
+    .map_err(|err| InvalidIdTokenNonce(err))?;
 
   if let Some(acr_values) = &config.acr_values {
     if let Some(auth_context) = claims.auth_context_ref() {
