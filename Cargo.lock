@@ -815,7 +815,7 @@ checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 [[package]]
 name = "openidconnect"
 version = "2.4.1"
-source = "git+https://github.com/ramosbugs/openidconnect-rs.git?branch=main#a52ef566522d26ed8648aaf0062507a685c1ad6a"
+source = "git+https://github.com/ramosbugs/openidconnect-rs.git?branch=main#47e0c4159fdcae5a9f84204d13cb093655ebecae"
 dependencies = [
  "base64",
  "chrono",
