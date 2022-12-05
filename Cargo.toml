@@ -7,7 +7,7 @@ edition = "2021"
 tokio = { version = "1.21", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
 openidconnect = { git = "https://github.com/ramosbugs/openidconnect-rs.git", branch = "main", version = "2.4", features = ["reqwest", "rustls-tls", ], default-features = false }
 axum = { version = "0.5", features = ["http1", "query", "headers"], default-features = false }
-axum-extra = { version = "0.3", features = ["cookie"] }
+axum-extra = { version = "0.4", features = ["cookie"] }
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "1.2", features = ["v4"] }
 tracing-subscriber = "0.3"
