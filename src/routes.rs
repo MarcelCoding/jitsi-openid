@@ -1,10 +1,9 @@
-use axum::body::Body;
 use axum::extract::{Path, Query};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
 use axum::{headers, Extension, Router, TypedHeader};
+use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
-use cookie::Cookie;
 use jsonwebtoken::{EncodingKey, Header};
 use openidconnect::core::{CoreAuthenticationFlow, CoreGenderClaim};
 use openidconnect::reqwest::async_http_client;
@@ -28,7 +27,7 @@ use crate::{
 
 const COOKIE_NAME: &str = "JITSI_OPENID_SESSION";
 
-pub(crate) fn build_routes() -> Router<Body> {
+pub(crate) fn build_routes() -> Router {
   Router::new()
     .route("/room/:name", get(room))
     .route("/callback", get(callback))
@@ -171,7 +170,7 @@ fn id_token_claims(
 
   let claims = id_token
     .claims(&client.id_token_verifier(), nonce)
-    .map_err(|err| InvalidIdTokenNonce(err))?;
+    .map_err(InvalidIdTokenNonce)?;
 
   if let Some(acr_values) = &config.acr_values {
     if let Some(auth_context) = claims.auth_context_ref() {

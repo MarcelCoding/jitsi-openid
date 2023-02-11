@@ -70,6 +70,7 @@ dependencies = [
  "serde",
  "serde_urlencoded",
  "sync_wrapper",
+ "tokio",
  "tower",
  "tower-http",
  "tower-layer",
@@ -101,7 +102,7 @@ checksum = "f9a320103719de37b7b4da4c8eb629d4573f6bcfd3dfe80d3208806895ccf81d"
 dependencies = [
  "axum",
  "bytes",
- "cookie 0.16.2",
+ "cookie",
  "futures-util",
  "http",
  "mime",
@@ -213,16 +214,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e859cd57d0710d9e06c381b550c06e76992472a8c6d527aecd2fc673dcc231fb"
 dependencies = [
  "percent-encoding",
- "time",
- "version_check",
-]
-
-[[package]]
-name = "cookie"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7efb37c3e1ccb1ff97164ad95ac1606e8ccd35b3fa0a7d99a304c7f4a428cc24"
-dependencies = [
  "time",
  "version_check",
 ]
@@ -666,7 +657,6 @@ dependencies = [
  "axum",
  "axum-extra",
  "config",
- "cookie 0.17.0",
  "jsonwebtoken",
  "openidconnect",
  "serde",
@@ -1556,6 +1546,7 @@ dependencies = [
  "futures-util",
  "pin-project",
  "pin-project-lite",
+ "tokio",
  "tower-layer",
  "tower-service",
  "tracing",
