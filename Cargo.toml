@@ -4,7 +4,7 @@ version = "2.0.0"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.21", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
+tokio = { version = "1.26", features = ["macros", "rt-multi-thread", "signal"], default-features = false }
 openidconnect = { version = "2.5", features = ["reqwest", "rustls-tls", ], default-features = false }
 axum = { version = "0.6", features = ["tokio", "http1", "query", "headers"], default-features = false }
 axum-extra = { version = "0.4", features = ["cookie"] }
