@@ -12,11 +12,14 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ${{ format('{0}-latest', matrix.os) }}
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
-        os: [ windows, ubuntu, macos ]
+        target:
+          - x86_64-unknown-linux-gnu
+          - aarch64-unknown-linux-gnu
+          - armv7-unknown-linux-gnueabihf
 
     steps:
       - uses: actions/checkout@v3
@@ -29,34 +32,33 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ matrix.target }}-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-
+            ${{ runner.os }}-cargo-${{ matrix.target }}-
 
       - uses: dtolnay/rust-toolchain@stable
 
+      - name: Install cross
+        run: wget -cO - https://github.com/cross-rs/cross/releases/latest/download/cross-x86_64-unknown-linux-gnu.tar.gz | tar -xz
+
       - name: Build
-        run: cargo build --release
+        run: ./cross build --release --target ${{ matrix.target }}
 
       - name: Rename binary
-        if: matrix.os != 'windows'
-        run: mv target/release/jitsi-openid jitsi-openid_${{ matrix.os }}
-
-      - name: Rename binary (win)
-        if: matrix.os == 'windows'
-        run: mv target/release/jitsi-openid.exe jitsi-openid_${{ matrix.os }}.exe
+        run: |
+          mv target/${{ matrix.target }}/release/jitsi-openid jitsi-openid_${{ matrix.target }}
 
       - uses: actions/upload-artifact@v2
         with:
-          name: jitsi-openid_${{ matrix.os }}
-          path: jitsi-openid_${{ matrix.os }}*
+          name: jitsi-openid_${{ matrix.target }}
+          path: jitsi-openid_${{ matrix.target }}
 
       - uses: alexellis/upload-assets@0.4.0
         if: startsWith(github.ref, 'refs/tags/')
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
-          asset_paths: '["jitsi-openid_${{ matrix.os }}*"]'
+          asset_paths: '["jitsi-openid_${{ matrix.target }}"]'
 
   docker:
     needs: build
@@ -82,7 +84,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
 
-      # - uses: docker/setup-qemu-action@v2
+      - uses: docker/setup-qemu-action@v2
       - uses: docker/setup-buildx-action@v2
 
       - name: Cache Docker layers
