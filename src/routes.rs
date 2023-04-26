@@ -232,7 +232,10 @@ async fn user_info_claims(
         email: claims.email().map(|email| email.to_string()),
         affiliation: claims.additional_claims().affiliation.clone(),
         name: get_display_name(&claims),
-        avatar: None,
+        avatar: claims
+          .picture()
+          .and_then(|x| x.get(None))
+          .map(|x| x.to_string()),
       }))
     }
     Err(ConfigurationError::MissingUrl(_)) => Ok(None),
