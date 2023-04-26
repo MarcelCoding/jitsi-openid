@@ -48,7 +48,7 @@ jobs:
         run: |
           mv target/${{ matrix.target }}/release/jitsi-openid jitsi-openid_${{ matrix.target }}
 
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: jitsi-openid_${{ matrix.target }}
           path: jitsi-openid_${{ matrix.target }}
