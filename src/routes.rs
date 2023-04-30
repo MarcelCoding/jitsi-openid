@@ -209,7 +209,10 @@ fn id_token_claims(
     email: claims.email().map(|email| email.to_string()),
     affiliation: claims.additional_claims().affiliation.clone(),
     name: get_display_name_id_token(claims),
-    avatar: None,
+    avatar: claims
+        .picture()
+        .and_then(|x| x.get(None))
+        .map(|x| x.to_string()),
   }))
 }
 
