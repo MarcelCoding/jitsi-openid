@@ -29,7 +29,7 @@ const COOKIE_NAME: &str = "JITSI_OPENID_SESSION";
 
 pub(crate) fn build_routes() -> Router {
   Router::new()
-    .route("/room/:name", get(room))
+    .route("/room/*name", get(room))
     .route("/callback", get(callback))
 }
 
