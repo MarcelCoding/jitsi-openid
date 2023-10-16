@@ -1,4 +1,4 @@
-FROM rust:slim AS builder
+FROM rust:slim-bookworm AS builder
 
 RUN update-ca-certificates
 
@@ -27,7 +27,7 @@ RUN cargo build --release \
 COPY ./src ./src
 RUN cargo build --release
 
-FROM gcr.io/distroless/cc
+FROM debian:bookworm-slim
 
 ENV LISTEN_ADDR=0.0.0.0:3000
 EXPOSE 3000
