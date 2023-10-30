@@ -14,7 +14,7 @@ use openidconnect::{
 use serde::{self, Serializer};
 use serde::{Deserialize, Serialize};
 use time::{Duration, OffsetDateTime};
-use tracing::error;
+use tracing::{error, warn};
 use uuid::Uuid;
 
 use crate::AppError::{AuthenticationContextWasNotFulfilled, IdTokenRequired};
@@ -123,7 +123,10 @@ async fn callback(
     .set_pkce_verifier(session.pkce_verifier)
     .request_async(async_http_client)
     .await
-    .map_err(|_| InvalidCode)?;
+    .map_err(|err| {
+      warn!("Authentication failed, Invalid Code: {:?}", err);
+      InvalidCode
+    })?;
 
   let jitsi_user = match id_token_claims(&config, &client, &response, &session.nonce)? {
     None => match user_info_claims(&client, &response).await? {
@@ -184,13 +187,22 @@ fn id_token_claims(
 
   match claims.access_token_hash() {
     Some(expected_access_token_hash) => {
-      let algorithm = id_token
-        .signing_alg()
-        .map_err(|_| UnsupportedSigningAlgorithm)?;
+      let algorithm = id_token.signing_alg().map_err(|err| {
+        warn!(
+          "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
+          err
+        );
+        UnsupportedSigningAlgorithm
+      })?;
 
       let actual_access_token_hash =
-        AccessTokenHash::from_token(response.access_token(), &algorithm)
-          .map_err(|_| UnsupportedSigningAlgorithm)?;
+        AccessTokenHash::from_token(response.access_token(), &algorithm).map_err(|err| {
+          warn!(
+            "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
+            err
+          );
+          UnsupportedSigningAlgorithm
+        })?;
 
       if &actual_access_token_hash != expected_access_token_hash {
         return Err(InvalidAccessToken);
@@ -210,9 +222,9 @@ fn id_token_claims(
     affiliation: claims.additional_claims().affiliation.clone(),
     name: get_display_name_id_token(claims),
     avatar: claims
-        .picture()
-        .and_then(|x| x.get(None))
-        .map(|x| x.to_string()),
+      .picture()
+      .and_then(|x| x.get(None))
+      .map(|x| x.to_string()),
   }))
 }
 
@@ -222,10 +234,14 @@ async fn user_info_claims(
 ) -> Result<Option<JitsiUser>, AppError> {
   match client.user_info(response.access_token().clone(), None) {
     Ok(request) => {
-      let claims: MyUserInfoClaims = request
-        .request_async(async_http_client)
-        .await
-        .map_err(|_| UnableToQueryUserInfo)?;
+      let claims: MyUserInfoClaims =
+        request
+          .request_async(async_http_client)
+          .await
+          .map_err(|err| {
+            warn!("Authentication failed, UnableToQueryUserInfo: {:?}", err);
+            UnableToQueryUserInfo
+          })?;
 
       Ok(Some(JitsiUser {
         id: match claims.preferred_username() {

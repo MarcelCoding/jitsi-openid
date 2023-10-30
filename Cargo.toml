@@ -1,6 +1,6 @@
 [package]
 name = "jitsi-openid"
-version = "2.0.0"
+version = "2.0.7"
 edition = "2021"
 
 [dependencies]
@@ -9,9 +9,9 @@ axum = { version = "0.6", features = ["tokio", "http1", "query", "headers"], def
 openidconnect = { version = "3.4", features = ["reqwest", "rustls-tls", ], default-features = false }
 axum-extra = { version = "0.8", features = ["cookie"] }
 serde = { version = "1.0", features = ["derive"] }
-uuid = { version = "1.4", features = ["v4"] }
+uuid = { version = "1.5", features = ["v4"] }
 tracing-subscriber = "0.3"
-jsonwebtoken = "9.0"
+jsonwebtoken = "9.1"
 tracing = "0.1"
 config = "0.13"
 anyhow = "1.0"
