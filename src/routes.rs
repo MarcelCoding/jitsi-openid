@@ -196,18 +196,10 @@ fn id_token_claims(
     }
   }
 
-  match claims.access_token_hash() {
-    Some(expected_access_token_hash) => {
-      let algorithm = id_token.signing_alg().map_err(|err| {
-        warn!(
-          "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
-          err
-        );
-        UnsupportedSigningAlgorithm
-      })?;
-
-      let actual_access_token_hash =
-        AccessTokenHash::from_token(response.access_token(), &algorithm).map_err(|err| {
+  if config.verify_access_token_hash.unwrap_or(true) {
+    match claims.access_token_hash() {
+      Some(expected_access_token_hash) => {
+        let algorithm = id_token.signing_alg().map_err(|err| {
           warn!(
             "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
             err
@@ -215,12 +207,22 @@ fn id_token_claims(
           UnsupportedSigningAlgorithm
         })?;
 
-      if &actual_access_token_hash != expected_access_token_hash {
-        return Err(InvalidAccessToken);
+        let actual_access_token_hash =
+          AccessTokenHash::from_token(response.access_token(), &algorithm).map_err(|err| {
+            warn!(
+              "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
+              err
+            );
+            UnsupportedSigningAlgorithm
+          })?;
+
+        if &actual_access_token_hash != expected_access_token_hash {
+          return Err(InvalidAccessToken);
+        }
       }
-    }
-    None => return Err(MissingAccessTokenHash),
-  };
+      None => return Err(MissingAccessTokenHash),
+    };
+  }
 
   let uid = match claims.preferred_username() {
     Some(name) => name.to_string(),

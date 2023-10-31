@@ -59,7 +59,9 @@ services:
                                                  #    space seperated list of allowed actions (OPTIONAL), see
                                                  #    https://github.com/MarcelCoding/jitsi-openid/issues/122
     # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space seperated list of scopes (OPTIONAL),
-                                                 # default: openid email
+                                                 #    default: openid email
+    # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
+                                                 #    default: true
     ports:
       - '3000:3000'
 

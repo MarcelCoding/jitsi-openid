@@ -25,6 +25,8 @@ pub(crate) struct Cfg {
   #[serde(default)]
   #[serde(deserialize_with = "string_array2")]
   pub(crate) scopes: Option<Vec<String>>,
+  #[serde(default)]
+  pub(crate) verify_access_token_hash: Option<bool>,
 }
 
 fn default_listen_addr() -> SocketAddr {
