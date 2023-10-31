@@ -22,10 +22,24 @@ pub(crate) struct Cfg {
   #[serde(default)]
   #[serde(deserialize_with = "string_array")]
   pub(crate) acr_values: Option<Vec<AuthenticationContextClass>>,
+  #[serde(default)]
+  #[serde(deserialize_with = "string_array2")]
+  pub(crate) scopes: Option<Vec<String>>,
 }
 
 fn default_listen_addr() -> SocketAddr {
   ([127, 0, 0, 1], 3000).into()
+}
+
+/// Serializes an OffsetDateTime to a Unix timestamp (milliseconds since 1970/1/1T00:00:00T)
+pub fn string_array2<'a, D: Deserializer<'a>>(
+  deserializer: D,
+) -> Result<Option<Vec<String>>, D::Error> {
+  let input: String = Deserialize::deserialize(deserializer)?;
+
+  let values = input.split(' ').map(|acr| acr.to_string()).collect();
+
+  Ok(Some(values))
 }
 
 /// Serializes an OffsetDateTime to a Unix timestamp (milliseconds since 1970/1/1T00:00:00T)

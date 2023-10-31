@@ -58,6 +58,8 @@ services:
     # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
                                                  #    space seperated list of allowed actions (OPTIONAL), see
                                                  #    https://github.com/MarcelCoding/jitsi-openid/issues/122
+    # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space seperated list of scopes (OPTIONAL),
+                                                 # default: openid email
     ports:
       - '3000:3000'
 

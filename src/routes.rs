@@ -48,9 +48,20 @@ async fn room(
       CsrfToken::new_random,
       Nonce::new_random,
     )
-    .set_pkce_challenge(pkce_challenge)
-    .add_scope(Scope::new("profile".to_string()))
-    .add_scope(Scope::new("email".to_string()));
+    .set_pkce_challenge(pkce_challenge);
+
+  match config.scopes {
+    None => {
+      request = request
+        .add_scope(Scope::new("profile".to_string()))
+        .add_scope(Scope::new("email".to_string()))
+    }
+    Some(scopes) => {
+      for scope in &scopes {
+        request = request.add_scope(Scope::new(scope.to_string()));
+      }
+    }
+  };
 
   if let Some(acr_values) = config.acr_values {
     for class in acr_values {
