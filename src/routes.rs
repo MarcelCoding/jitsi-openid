@@ -162,6 +162,9 @@ async fn callback(
 
   let mut url = config.jitsi_url.join(&session.room).unwrap();
   url.query_pairs_mut().append_pair("jwt", &jwt);
+  if config.skip_prejoin_screen.unwrap_or(true) {
+    url.set_fragment(Some("config.prejoinConfig.enabled=false"));
+  }
   Ok(Redirect::to(url.as_str()))
 }
 

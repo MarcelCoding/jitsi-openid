@@ -27,6 +27,8 @@ pub(crate) struct Cfg {
   pub(crate) scopes: Option<Vec<String>>,
   #[serde(default)]
   pub(crate) verify_access_token_hash: Option<bool>,
+  #[serde(default)]
+  pub(crate) skip_prejoin_screen: Option<bool>,
 }
 
 fn default_listen_addr() -> SocketAddr {

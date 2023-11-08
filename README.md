@@ -62,6 +62,7 @@ services:
                                                  #    default: openid email
     # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
                                                  #    default: true
+    # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
     ports:
       - '3000:3000'
 
