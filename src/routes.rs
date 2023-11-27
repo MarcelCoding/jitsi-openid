@@ -154,6 +154,7 @@ async fn callback(
     config.jitsi_sub,
     "*".to_string(),
     config.jitsi_secret,
+    config.group,
   )
   .map_err(|err| {
     error!("Unable to create jwt: {}", err);
@@ -316,11 +317,12 @@ fn create_jitsi_jwt(
   sub: String,
   room: String,
   secret: String,
+  group: String,
 ) -> anyhow::Result<String> {
   let iat = OffsetDateTime::now_utc();
   let exp = iat + Duration::days(1);
 
-  let context = JitsiContext { user, group: None };
+  let context = JitsiContext { user, group: Some(group) };
   let claims = JitsiClaims {
     context,
     aud,
