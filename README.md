@@ -63,6 +63,8 @@ services:
     # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
                                                  #    default: true
     # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
+    # - 'GROUP=example'                          # <- Value for the 'group' field in the token
+                                                 #    default: ''
     ports:
       - '3000:3000'
 
