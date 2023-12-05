@@ -290,6 +290,8 @@ struct JitsiClaims {
   sub: String,
   room: String,
   #[serde(serialize_with = "jwt_numeric_date")]
+  nbf: OffsetDateTime,
+  #[serde(serialize_with = "jwt_numeric_date")]
   iat: OffsetDateTime,
   #[serde(serialize_with = "jwt_numeric_date")]
   exp: OffsetDateTime,
@@ -329,6 +331,8 @@ fn create_jitsi_jwt(
     iss,
     sub,
     room,
+    // nbf = not-before
+    nbf: iat, // idk whey some jitsi configurations what this, its basically the same as iat
     iat,
     exp,
   };
