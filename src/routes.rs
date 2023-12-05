@@ -1,7 +1,7 @@
 use axum::extract::{Path, Query};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
-use axum::{headers, Extension, Router, TypedHeader};
+use axum::{Extension, Router};
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
 use jsonwebtoken::{EncodingKey, Header};
@@ -83,7 +83,7 @@ async fn room(
   );
 
   // Build the cookie
-  let cookie = Cookie::build(COOKIE_NAME, session_id.to_string())
+  let cookie = Cookie::build((COOKIE_NAME, session_id.to_string()))
     .domain(
       config
         .base_url
@@ -94,8 +94,7 @@ async fn room(
     .path(config.base_url.path().to_string())
     .secure(config.base_url.scheme() == "https")
     .http_only(true)
-    .max_age(Duration::minutes(30))
-    .finish();
+    .max_age(Duration::minutes(30));
 
   (jar.add(cookie), Redirect::to(auth_url.as_str()))
 }
@@ -108,13 +107,16 @@ struct Callback {
 }
 
 async fn callback(
+  jar: CookieJar,
   Query(callback): Query<Callback>,
-  TypedHeader(cookies): TypedHeader<headers::Cookie>,
   Extension(client): Extension<MyClient>,
   Extension(store): Extension<Store>,
   Extension(config): Extension<Cfg>,
 ) -> Result<impl IntoResponse, AppError> {
-  let session_id = match cookies.get(COOKIE_NAME).map(Uuid::parse_str) {
+  let session_id = match jar
+    .get(COOKIE_NAME)
+    .map(|cookie| Uuid::parse_str(cookie.value()))
+  {
     Some(Ok(session_id)) => session_id,
     Some(Err(_)) => return Err(InvalidSession),
     None => return Err(InvalidSession),
@@ -163,9 +165,11 @@ async fn callback(
 
   let mut url = config.jitsi_url.join(&session.room).unwrap();
   url.query_pairs_mut().append_pair("jwt", &jwt);
+
   if config.skip_prejoin_screen.unwrap_or(true) {
     url.set_fragment(Some("config.prejoinConfig.enabled=false"));
   }
+
   Ok(Redirect::to(url.as_str()))
 }
 
@@ -324,7 +328,11 @@ fn create_jitsi_jwt(
   let iat = OffsetDateTime::now_utc();
   let exp = iat + Duration::days(1);
 
-  let context = JitsiContext { user, group: Some(group) };
+  let context = JitsiContext {
+    user,
+    group: Some(group),
+  };
+
   let claims = JitsiClaims {
     context,
     aud,

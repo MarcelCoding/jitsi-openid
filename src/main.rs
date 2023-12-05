@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use axum::{Extension, Server};
+use axum::Extension;
 use config::{Config, Environment};
 use openidconnect::core::{
   CoreAuthDisplay, CoreAuthPrompt, CoreErrorResponseType, CoreGenderClaim, CoreJsonWebKey,
@@ -16,9 +16,10 @@ use openidconnect::{
 };
 use serde::{self};
 use serde::{Deserialize, Serialize};
-use tokio::signal;
+use tokio::net::TcpListener;
 use tokio::sync::RwLock;
-use tracing::info;
+use tracing::{info, Level};
+use tracing_subscriber::FmtSubscriber;
 use uuid::Uuid;
 
 use crate::cfg::Cfg;
@@ -84,7 +85,20 @@ type MyClient = Client<
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-  tracing_subscriber::fmt::init();
+  let subscriber = FmtSubscriber::builder()
+    .with_max_level(Level::INFO)
+    .compact()
+    .finish();
+
+  tracing::subscriber::set_global_default(subscriber)?;
+
+  info!(concat!(
+    "Booting ",
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+    "..."
+  ));
 
   let config = Config::builder()
     .add_source(Environment::default().try_parsing(true))
@@ -117,44 +131,43 @@ async fn main() -> anyhow::Result<()> {
     .layer(Extension(client))
     .layer(Extension(config.clone()));
 
+  let listener = TcpListener::bind(config.listen_addr).await?;
+
   info!(
     "Listening on {}, have a try on: {}/{{name}}",
     config.listen_addr,
     config.base_url.join("room")?
   );
 
-  Server::bind(&config.listen_addr)
-    .serve(app.into_make_service())
-    .with_graceful_shutdown(shutdown_signal())
-    .await?;
+  axum::serve(listener, app.into_make_service()).await?;
 
   Ok(())
 }
 
-async fn shutdown_signal() {
-  let ctrl_c = async {
-    signal::ctrl_c()
-      .await
-      .expect("failed to install Ctrl+C handler");
-  };
-
-  #[cfg(unix)]
-  {
-    let terminate = async {
-      signal::unix::signal(signal::unix::SignalKind::terminate())
-        .expect("failed to install signal handler")
-        .recv()
-        .await;
-    };
-
-    tokio::select! {
-      _ = ctrl_c => {},
-      _ = terminate => {},
-    }
-  }
-
-  #[cfg(not(unix))]
-  ctrl_c.await;
-
-  info!("signal received, starting graceful shutdown");
-}
+// async fn shutdown_signal() {
+//   let ctrl_c = async {
+//     signal::ctrl_c()
+//       .await
+//       .expect("failed to install Ctrl+C handler");
+//   };
+//
+//   #[cfg(unix)]
+//   {
+//     let terminate = async {
+//       signal::unix::signal(signal::unix::SignalKind::terminate())
+//         .expect("failed to install signal handler")
+//         .recv()
+//         .await;
+//     };
+//
+//     tokio::select! {
+//       _ = ctrl_c => {},
+//       _ = terminate => {},
+//     }
+//   }
+//
+//   #[cfg(not(unix))]
+//   ctrl_c.await;
+//
+//   info!("signal received, starting graceful shutdown");
+// }
