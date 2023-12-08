@@ -13,6 +13,7 @@ use openidconnect::{
 };
 use serde::{self, Serializer};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use time::{Duration, OffsetDateTime};
 use tracing::{error, warn};
 use uuid::Uuid;
@@ -240,12 +241,12 @@ fn id_token_claims(
   Ok(Some(JitsiUser {
     id: uid,
     email: claims.email().map(|email| email.to_string()),
-    affiliation: claims.additional_claims().affiliation.clone(),
     name: get_display_name_id_token(claims),
     avatar: claims
       .picture()
       .and_then(|x| x.get(None))
       .map(|x| x.to_string()),
+    other: claims.additional_claims().other.clone(),
   }))
 }
 
@@ -270,12 +271,12 @@ async fn user_info_claims(
           None => claims.subject().to_string(),
         },
         email: claims.email().map(|email| email.to_string()),
-        affiliation: claims.additional_claims().affiliation.clone(),
         name: get_display_name(&claims),
         avatar: claims
           .picture()
           .and_then(|x| x.get(None))
           .map(|x| x.to_string()),
+        other: claims.additional_claims().other.clone(),
       }))
     }
     Err(ConfigurationError::MissingUrl(_)) => Ok(None),
@@ -299,6 +300,8 @@ struct JitsiClaims {
   iat: OffsetDateTime,
   #[serde(serialize_with = "jwt_numeric_date")]
   exp: OffsetDateTime,
+  #[serde(flatten)]
+  other: HashMap<String, String>,
 }
 
 #[derive(Serialize)]
@@ -311,9 +314,10 @@ struct JitsiContext {
 struct JitsiUser {
   id: String,
   email: Option<String>,
-  affiliation: Option<String>,
   name: Option<String>,
   avatar: Option<String>,
+  #[serde(flatten)]
+  other: HashMap<String, String>,
 }
 
 fn create_jitsi_jwt(
@@ -328,13 +332,12 @@ fn create_jitsi_jwt(
   let iat = OffsetDateTime::now_utc();
   let exp = iat + Duration::days(1);
 
-  let context = JitsiContext {
-    user,
-    group: Some(group),
-  };
-
   let claims = JitsiClaims {
-    context,
+    other: user.other.clone(),
+    context: JitsiContext {
+      user,
+      group: Some(group),
+    },
     aud,
     iss,
     sub,
