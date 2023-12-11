@@ -47,8 +47,7 @@ struct Session {
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct MyClaims {
-  #[serde(flatten)]
-  other: HashMap<String, String>,
+  affiliation: Option<String>,
 }
 
 impl AdditionalClaims for MyClaims {}
