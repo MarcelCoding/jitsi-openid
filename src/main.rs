@@ -48,6 +48,7 @@ struct Session {
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 struct MyClaims {
   affiliation: Option<String>,
+  moderator: Option<bool>,
 }
 
 impl AdditionalClaims for MyClaims {}

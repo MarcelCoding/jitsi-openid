@@ -246,6 +246,7 @@ fn id_token_claims(
       .picture()
       .and_then(|x| x.get(None))
       .map(|x| x.to_string()),
+    moderator: claims.additional_claims().moderator.clone(),
   }))
 }
 
@@ -276,6 +277,7 @@ async fn user_info_claims(
           .picture()
           .and_then(|x| x.get(None))
           .map(|x| x.to_string()),
+        moderator: claims.additional_claims().moderator.clone(),
       }))
     }
     Err(ConfigurationError::MissingUrl(_)) => Ok(None),
@@ -314,6 +316,7 @@ struct JitsiUser {
   affiliation: Option<String>,
   name: Option<String>,
   avatar: Option<String>,
+  moderator: Option<bool>,
 }
 
 fn create_jitsi_jwt(
