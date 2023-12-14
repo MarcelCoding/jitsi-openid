@@ -1,4 +1,4 @@
-use axum::extract::{Path, Query};
+use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
 use axum::{Extension, Router};
@@ -20,14 +20,14 @@ use uuid::Uuid;
 use crate::AppError::{AuthenticationContextWasNotFulfilled, IdTokenRequired};
 use crate::{
   AppError, Cfg, InternalServerError, InvalidAccessToken, InvalidCode, InvalidIdTokenNonce,
-  InvalidSession, InvalidState, MissingAccessTokenHash, MissingIdTokenAndUserInfoEndpoint,
-  MyClaims, MyClient, MyTokenResponse, MyUserInfoClaims, Session, Store, UnableToQueryUserInfo,
-  UnsupportedSigningAlgorithm,
+  InvalidSession, InvalidState, JitsiSecret, JitsiState, MissingAccessTokenHash,
+  MissingIdTokenAndUserInfoEndpoint, MyClaims, MyClient, MyTokenResponse, MyUserInfoClaims,
+  Session, Store, UnableToQueryUserInfo, UnsupportedSigningAlgorithm,
 };
 
 const COOKIE_NAME: &str = "JITSI_OPENID_SESSION";
 
-pub(crate) fn build_routes() -> Router {
+pub(crate) fn build_routes() -> Router<JitsiState> {
   Router::new()
     .route("/room/*name", get(room))
     .route("/callback", get(callback))
@@ -35,14 +35,13 @@ pub(crate) fn build_routes() -> Router {
 
 async fn room(
   Path(room): Path<String>,
-  Extension(client): Extension<MyClient>,
-  Extension(store): Extension<Store>,
-  Extension(config): Extension<Cfg>,
+  State(state): State<JitsiState>,
   jar: CookieJar,
 ) -> impl IntoResponse {
   let (pkce_challenge, pkce_verifier) = PkceCodeChallenge::new_random_sha256();
 
-  let mut request = client
+  let mut request = state
+    .client
     .authorize_url(
       CoreAuthenticationFlow::AuthorizationCode,
       CsrfToken::new_random,
@@ -50,7 +49,7 @@ async fn room(
     )
     .set_pkce_challenge(pkce_challenge);
 
-  match config.scopes {
+  match state.config.scopes {
     None => {
       request = request
         .add_scope(Scope::new("profile".to_string()))
@@ -63,7 +62,7 @@ async fn room(
     }
   };
 
-  if let Some(acr_values) = config.acr_values {
+  if let Some(acr_values) = state.config.acr_values {
     for class in acr_values {
       request = request.add_auth_context_value(class);
     }
@@ -72,7 +71,7 @@ async fn room(
   let (auth_url, csrf_token, nonce) = request.url();
 
   let session_id = Uuid::new_v4();
-  store.write().await.insert(
+  state.store.write().await.insert(
     session_id,
     Session {
       room,
@@ -85,14 +84,15 @@ async fn room(
   // Build the cookie
   let cookie = Cookie::build((COOKIE_NAME, session_id.to_string()))
     .domain(
-      config
+      state
+        .config
         .base_url
         .host()
         .expect("Missing host in base url")
         .to_string(),
     )
-    .path(config.base_url.path().to_string())
-    .secure(config.base_url.scheme() == "https")
+    .path(state.config.base_url.path().to_string())
+    .secure(state.config.base_url.scheme() == "https")
     .http_only(true)
     .max_age(Duration::minutes(30));
 
@@ -109,9 +109,7 @@ struct Callback {
 async fn callback(
   jar: CookieJar,
   Query(callback): Query<Callback>,
-  Extension(client): Extension<MyClient>,
-  Extension(store): Extension<Store>,
-  Extension(config): Extension<Cfg>,
+  State(state): State<JitsiState>,
 ) -> Result<impl IntoResponse, AppError> {
   let session_id = match jar
     .get(COOKIE_NAME)
@@ -122,7 +120,7 @@ async fn callback(
     None => return Err(InvalidSession),
   };
 
-  let session = match store.write().await.remove(&session_id) {
+  let session = match state.store.write().await.remove(&session_id) {
     Some(session) => session,
     None => return Err(InvalidSession),
   };
@@ -131,7 +129,8 @@ async fn callback(
     return Err(InvalidState);
   }
 
-  let response = client
+  let response = state
+    .client
     .exchange_code(callback.code)
     .set_pkce_verifier(session.pkce_verifier)
     .request_async(async_http_client)
@@ -141,8 +140,8 @@ async fn callback(
       InvalidCode
     })?;
 
-  let jitsi_user = match id_token_claims(&config, &client, &response, &session.nonce)? {
-    None => match user_info_claims(&client, &response).await? {
+  let jitsi_user = match id_token_claims(&state.config, &state.client, &response, &session.nonce)? {
+    None => match user_info_claims(&state.client, &response).await? {
       None => return Err(MissingIdTokenAndUserInfoEndpoint),
       Some(user) => user,
     },
@@ -153,20 +152,20 @@ async fn callback(
     jitsi_user,
     "jitsi".to_string(),
     "jitsi".to_string(),
-    config.jitsi_sub,
+    state.config.jitsi_sub,
     "*".to_string(),
-    config.jitsi_secret,
-    config.group,
+    state.jitsi_secret.0,
+    state.config.group,
   )
   .map_err(|err| {
     error!("Unable to create jwt: {}", err);
     InternalServerError
   })?;
 
-  let mut url = config.jitsi_url.join(&session.room).unwrap();
+  let mut url = state.config.jitsi_url.join(&session.room).unwrap();
   url.query_pairs_mut().append_pair("jwt", &jwt);
 
-  if config.skip_prejoin_screen.unwrap_or(true) {
+  if state.config.skip_prejoin_screen.unwrap_or(true) {
     url.set_fragment(Some("config.prejoinConfig.enabled=false"));
   }
 

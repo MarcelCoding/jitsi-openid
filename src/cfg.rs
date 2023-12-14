@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use openidconnect::{AuthenticationContextClass, ClientId, IssuerUrl};
 use serde::{Deserialize, Deserializer};
@@ -8,7 +9,8 @@ use crate::ClientSecret;
 
 #[derive(Deserialize, Clone)]
 pub(crate) struct Cfg {
-  pub(crate) jitsi_secret: String,
+  pub(crate) jitsi_secret: Option<String>,
+  pub(crate) jitsi_secret_file: Option<PathBuf>,
   pub(crate) jitsi_url: Url,
   pub(crate) jitsi_sub: String,
   #[serde(alias = "issuer_base_url")]
@@ -16,7 +18,8 @@ pub(crate) struct Cfg {
   pub(crate) base_url: Url,
   pub(crate) client_id: ClientId,
   #[serde(alias = "secret")]
-  pub(crate) client_secret: ClientSecret,
+  pub(crate) client_secret: Option<ClientSecret>,
+  pub(crate) client_secret_path: Option<PathBuf>,
   #[serde(default = "default_listen_addr")]
   pub(crate) listen_addr: SocketAddr,
   #[serde(default)]
