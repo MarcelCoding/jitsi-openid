@@ -79,14 +79,14 @@ in
         User = "jitsi-openid";
 
         Environment = [
-          "JITSI_OPENID_LISTEN_ADDR=${if (lib.hasInfix ":" cfg.listen.addr) then "[${cfg.listen.addr}]" else cfg.listen.addr}:${toString cfg.listen.port}"
-          "JITSI_OPENID_JITSI_SECRET_FILE=${cfg.jitsiSecretFile}"
-          "JITSI_OPENID_JITSI_URL=${cfg.jitsiUrl}"
-          "JITSI_OPENID_JITSI_SUB=${cfg.jitsiSub}"
-          "JITSI_OPENID_ISSUER_URL=${cfg.issuerUrl}"
-          "JITSI_OPENID_BASE_URL=${cfg.baseUrl}"
-          "JITSI_OPENID_CLIENT_ID=${cfg.clientId}"
-          "JITSI_OPENID_CLIENT_SECRET_FILE=${cfg.clientSecretFile}"
+          "LISTEN_ADDR=${if (lib.hasInfix ":" cfg.listen.addr) then "[${cfg.listen.addr}]" else cfg.listen.addr}:${toString cfg.listen.port}"
+          "JITSI_SECRET_FILE=${cfg.jitsiSecretFile}"
+          "JITSI_URL=${cfg.jitsiUrl}"
+          "JITSI_SUB=${cfg.jitsiSub}"
+          "ISSUER_URL=${cfg.issuerUrl}"
+          "BASE_URL=${cfg.baseUrl}"
+          "CLIENT_ID=${cfg.clientId}"
+          "CLIENT_SECRET_FILE=${cfg.clientSecretFile}"
         ];
       };
     };
