@@ -37,6 +37,8 @@ mod error;
 mod routes;
 
 type Store = Arc<RwLock<HashMap<Uuid, Session>>>;
+#[derive(Clone)]
+pub(crate) struct JitsiSecret(pub(crate) String);
 
 struct Session {
   room: String,
@@ -84,6 +86,14 @@ type MyClient = Client<
   CoreRevocationErrorResponse,
 >;
 
+#[derive(Clone)]
+pub(crate) struct JitsiState {
+  store: Store,
+  client: MyClient,
+  config: Cfg,
+  jitsi_secret: JitsiSecret,
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
   let subscriber = FmtSubscriber::builder()
@@ -117,20 +127,46 @@ async fn main() -> anyhow::Result<()> {
   let provider_metadata: CoreProviderMetadata =
     CoreProviderMetadata::discover_async(config.issuer_url.clone(), async_http_client).await?;
 
+  let client_secret = config
+    .client_secret
+    .clone()
+    .or(
+      config
+        .client_secret_path
+        .clone()
+        .map(|path| ClientSecret::new(std::fs::read_to_string(path).unwrap())),
+    )
+    .expect("Client secret not specified.");
+
   let client = MyClient::from_provider_metadata(
     provider_metadata,
     config.client_id.clone(),
-    Some(config.client_secret.clone()),
+    Some(client_secret),
   )
   .set_redirect_uri(RedirectUrl::from_url(config.base_url.join("callback")?));
   // TODO: .set_revocation_uri ?
 
   info!("Successfully queried identity provider metadata");
 
-  let app = build_routes()
-    .layer(Extension(store))
-    .layer(Extension(client))
-    .layer(Extension(config.clone()));
+  let jitsi_secret = JitsiSecret(
+    config
+      .jitsi_secret
+      .clone()
+      .or(
+        config
+          .jitsi_secret_file
+          .clone()
+          .map(|path| std::fs::read_to_string(path).unwrap()),
+      )
+      .expect("Jitsi secret not specified."),
+  );
+
+  let app = build_routes().with_state(JitsiState {
+    store,
+    client,
+    config: config.clone(),
+    jitsi_secret: jitsi_secret.clone(),
+  });
 
   let listener = TcpListener::bind(config.listen_addr).await?;
 
