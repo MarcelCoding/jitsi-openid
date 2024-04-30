@@ -79,7 +79,7 @@ in
         User = "jitsi-openid";
 
         Environment = [
-          "JITSI_OPENID_LISTEN_ADDR=${cfg.listen.addr}:${toString cfg.listen.port}"
+          "JITSI_OPENID_LISTEN_ADDR=${if (lib.hasInfix ":" cfg.listen.addr) then "[${cfg.listen.addr}]" else cfg.listen.addr}:${toString cfg.listen.port}"
           "JITSI_OPENID_JITSI_SECRET_FILE=${cfg.jitsiSecretFile}"
           "JITSI_OPENID_JITSI_URL=${cfg.jitsiUrl}"
           "JITSI_OPENID_JITSI_SUB=${cfg.jitsiSub}"
