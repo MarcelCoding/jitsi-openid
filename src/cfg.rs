@@ -19,7 +19,7 @@ pub(crate) struct Cfg {
   pub(crate) client_id: ClientId,
   #[serde(alias = "secret")]
   pub(crate) client_secret: Option<ClientSecret>,
-  pub(crate) client_secret_path: Option<PathBuf>,
+  pub(crate) client_secret_file: Option<PathBuf>,
   #[serde(default = "default_listen_addr")]
   pub(crate) listen_addr: SocketAddr,
   #[serde(default)]

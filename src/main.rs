@@ -132,7 +132,7 @@ async fn main() -> anyhow::Result<()> {
     .clone()
     .or(
       config
-        .client_secret_path
+        .client_secret_file
         .clone()
         .map(|path| ClientSecret::new(std::fs::read_to_string(path).unwrap())),
     )
