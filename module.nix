@@ -6,7 +6,7 @@ in
 {
   options = {
     services.jitsi-openid = {
-      package = lib.mkPackageOption pkgs "jitsi-openid" {};
+      package = lib.mkPackageOption pkgs "jitsi-openid" { };
       enable = lib.mkEnableOption (lib.mdDoc "Jitsi OpenID");
       listen = {
         addr = lib.mkOption {
@@ -73,23 +73,23 @@ in
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
 
+      environment = {
+        LISTEN_ADDR = "${if (lib.hasInfix ":" cfg.listen.addr) then "[${cfg.listen.addr}]" else cfg.listen.addr}:${toString cfg.listen.port}";
+        JITSI_SECRET_FILE = "$d/jitsi_secret_file";
+        JITSI_URL = cfg.jitsiUrl;
+        JITSI_SUB = cfg.jitsiSub;
+        ISSUER_URL = cfg.issuerUrl;
+        BASE_URL = cfg.baseUrl;
+        CLIENT_ID = cfg.clientId;
+        CLIENT_SECRET_FILE = "%d/client_secret_file";
+      };
+
       serviceConfig = {
         ExecStart = "${cfg.package}/bin/jitsi-openid";
         DynamicUser = true;
         User = "jitsi-openid";
 
-        Environment = [
-          "LISTEN_ADDR=${if (lib.hasInfix ":" cfg.listen.addr) then "[${cfg.listen.addr}]" else cfg.listen.addr}:${toString cfg.listen.port}"
-          "JITSI_SECRET_FILE=$d/jitsi_secret_file"
-          "JITSI_URL=${cfg.jitsiUrl}"
-          "JITSI_SUB=${cfg.jitsiSub}"
-          "ISSUER_URL=${cfg.issuerUrl}"
-          "BASE_URL=${cfg.baseUrl}"
-          "CLIENT_ID=${cfg.clientId}"
-          "CLIENT_SECRET_FILE=%d/client_secret_file"
-        ];
-
-        serviceConfig.LoadCredential = [
+        LoadCredential = [
           "jitsi_secret_file:${cfg.jitsiSecretFile}"
           "client_secret_file:${cfg.clientSecretFile}"
         ];
