@@ -6,12 +6,7 @@ in
 {
   options = {
     services.jitsi-openid = {
-      package = lib.mkOption {
-        type = lib.types.package;
-        default = pkgs.jitsi-openid;
-        defaultText = lib.literalExpression "pkgs.jitsi-openid";
-        description = lib.mdDoc "Which Jitsi OpenID derivation to use.";
-      };
+      package = lib.mkPackageOption pkgs "jitsi-openid" {};
       enable = lib.mkEnableOption (lib.mdDoc "Jitsi OpenID");
       listen = {
         addr = lib.mkOption {

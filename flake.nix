@@ -26,7 +26,7 @@
       };
 
       nixosModules = rec {
-        jitsi-openid = import ./nixos-modules/default.nix;
+        jitsi-openid = import ./module.nix;
         default = jitsi-openid;
       };
     };
