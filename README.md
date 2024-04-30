@@ -38,7 +38,7 @@ docker run \
 # ...
 
 services:
-  
+
   # ...
 
   jitsi-openid:
@@ -46,25 +46,25 @@ services:
     restart: always
     environment:
       - 'JITSI_SECRET=SECURE_SECRET'             # <- shared with jitsi (JWT_APP_SECRET -> see .env from jitsi),
-                                                 #    secret to sign jwt tokens
+      #    secret to sign jwt tokens
       - 'JITSI_URL=https://meet.example.com'     # <- external url of jitsi
       - 'JITSI_SUB=meet.example.com'             # <- shared with jitsi (JWT_APP_ID -> see .env from jitsi),
-                                                 #    id of jitsi
+      #    id of jitsi
       - 'ISSUER_URL=https://id.example.com'      # <- base URL of your OpenID Connect provider
-                                                 #    Keycloak: https://id.example.com/auth/realms/<realm>
+      #    Keycloak: https://id.example.com/auth/realms/<realm>
       - 'BASE_URL=https://auth.meet.example.com' # <- base URL of this application
       - 'CLIENT_ID=meet.example.com'             # <- OpenID Connect Client ID
       - 'CLIENT_SECRET=SECURE_SECRET'            # <- OpenID Connect Client secret
-    # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
-                                                 #    space seperated list of allowed actions (OPTIONAL), see
-                                                 #    https://github.com/MarcelCoding/jitsi-openid/issues/122
-    # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space seperated list of scopes (OPTIONAL),
-                                                 #    default: openid email
-    # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
-                                                 #    default: true
-    # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
-    # - 'GROUP=example'                          # <- Value for the 'group' field in the token
-                                                 #    default: ''
+        # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
+        #    space seperated list of allowed actions (OPTIONAL), see
+        #    https://github.com/MarcelCoding/jitsi-openid/issues/122
+        # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space seperated list of scopes (OPTIONAL),
+        #    default: openid email
+        # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
+        #    default: true
+        # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
+        # - 'GROUP=example'                          # <- Value for the 'group' field in the token
+      #    default: ''
     ports:
       - '3000:3000'
 
@@ -72,8 +72,57 @@ services:
 ````
 
 To generate the `JITSI_SECRET` you can use one of the following command:
+
 ```bash
 cat /dev/urandom | tr -dc a-zA-Z0-9 | head -c128; echo
+```
+
+### NixOS
+
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-23.11";
+    jitsi-openid = {
+      url = "github:MarcelCoding/jitsi-openid";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
+
+  outputs = { self, nixpkgs, jitsi-openid, ... }: {
+    nixosConfigurations = {
+      hostname = nixpkgs.lib.nixosSystem {
+        modules = [
+          jitsi-openid.nixosModules.default
+          { nixpkgs.overlays = [ jitsi-openid.overlays.default ]; }
+        ];
+      };
+    };
+  };
+}
+```
+
+```nix
+# for an explanation see docker compose setup
+service.jitsi-openid = {
+  enable = true;
+  settings = {
+    package = pkgs.jitsi-openid;
+    enable = true;
+    listen = {
+      addr = "::1";
+      port = 6031;
+    };
+    jitsiSecretFile = "/run/secrets/jitsi-secret-file";
+    jitsiUrl = "https://meet.domain.tld";
+    jitsiSub = "meet.domain.tld";
+    issuerUrl = "https://auth.domain.tld";
+    baseUrl = "https://auth.meet.domain.tld";
+    clientId = "auth.meet.domain.tld";
+    clientSecretFile = "/run/secrets/client-secret-file";
+    openFirewall = false;
+  };
+};
 ```
 
 ### Jitsi Configuration
@@ -115,9 +164,12 @@ This includes the user id, email and name.
 
 The `sub` extracted from the `prefered_username` field, if that isn't preset the `sub` field is used.
 
-The `name` is extracted from the `name` field, if that isn't preset a concatenation of `given_name`, `middle_name` and `family_name` is used. If all tree of them are also not present the `prefered_username` is used.
+The `name` is extracted from the `name` field, if that isn't preset a concatenation of `given_name`, `middle_name`
+and `family_name` is used. If all tree of them are also not present the `prefered_username` is used.
 
-The `affiliation` is straight up passed, without any modifications or alternatives. It can be used to restrict the permissions a user has in a specific room in jitsi. See https://github.com/jitsi-contrib/prosody-plugins/tree/main/token_affiliation for more information.
+The `affiliation` is straight up passed, without any modifications or alternatives. It can be used to restrict the
+permissions a user has in a specific room in jitsi.
+See https://github.com/jitsi-contrib/prosody-plugins/tree/main/token_affiliation for more information.
 
 The picture (avatar) URL is delegated from the IDP to Jitsi.
 
