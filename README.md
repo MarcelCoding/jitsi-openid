@@ -104,7 +104,7 @@ cat /dev/urandom | tr -dc a-zA-Z0-9 | head -c128; echo
 
 ```nix
 # for an explanation see docker compose setup
-service.jitsi-openid = {
+services.jitsi-openid = {
   enable = true;
   settings = {
     package = pkgs.jitsi-openid;
