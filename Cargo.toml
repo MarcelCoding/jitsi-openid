@@ -4,7 +4,7 @@ version = "2.0.12"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.37", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
+tokio = { version = "1.39", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
 openidconnect = { version = "3.4", features = ["reqwest", "rustls-tls"], default-features = false }
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi"], default-features = false }
 axum = { version = "0.7", features = ["tokio", "http1", "query"], default-features = false }
