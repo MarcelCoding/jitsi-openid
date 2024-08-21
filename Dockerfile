@@ -14,6 +14,9 @@ RUN adduser \
     --uid "${UID}" \
     "${USER}"
 
+RUN apt-get update \
+ && apt-get install -y pkg-config libssl-dev
+
 RUN cargo new --bin jitsi-openid
 
 WORKDIR /jitsi-openid
