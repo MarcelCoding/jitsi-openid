@@ -8,4 +8,12 @@ pkgs.rustPlatform.buildRustPackage {
   cargoLock.lockFile = ./Cargo.lock;
   src = pkgs.lib.cleanSource ./.;
   cargoBuildFlags = "-p ${manifest.name}";
+
+  nativeBuildInputs = with pkgs; [
+    pkg-config
+  ];
+
+  buildInputs = with pkgs; [
+    openssl
+  ];
 }

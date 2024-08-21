@@ -18,6 +18,9 @@ serde = { version = "1.0", default-features = false }
 time = { version = "0.3", default-features = false }
 url = { version = "2.5", default-features = false }
 
+
+reqwest = {version = "*", features = ["rustls-tls-native-roots"]}
+
 [profile.release]
 lto = true
 codegen-units = 1
