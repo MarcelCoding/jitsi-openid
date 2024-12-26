@@ -4,16 +4,16 @@ version = "2.0.12"
 edition = "2021"
 
 [dependencies]
-tokio = { version = "1.39", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
+tokio = { version = "1.42", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
 openidconnect = { version = "3.5", features = ["reqwest", "rustls-tls"], default-features = false }
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi"], default-features = false }
 axum = { version = "0.7", features = ["tokio", "http1", "query"], default-features = false }
 axum-extra = { version = "0.9", features = ["cookie"], default-features = false }
 anyhow = { version = "1.0", features = ["std"], default-features = false }
-uuid = { version = "1.7", features = ["v4"], default-features = false }
+uuid = { version = "1.11", features = ["v4"], default-features = false }
 jsonwebtoken = { version = "9.3", default-features = false }
 tracing = { version = "0.1", default-features = false }
-config = { version = "0.14", default-features = false }
+config = { version = "0.15", default-features = false }
 serde = { version = "1.0", default-features = false }
 time = { version = "0.3", default-features = false }
 url = { version = "2.5", default-features = false }

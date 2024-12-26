@@ -6,16 +6,16 @@ ENV USER=jitsi-openid
 ENV UID=10001
 
 RUN adduser \
-    --disabled-password \
-    --gecos "" \
-    --home "/nonexistent" \
-    --shell "/sbin/nologin" \
-    --no-create-home \
-    --uid "${UID}" \
-    "${USER}"
+  --disabled-password \
+  --gecos "" \
+  --home "/nonexistent" \
+  --shell "/sbin/nologin" \
+  --no-create-home \
+  --uid "${UID}" \
+  "${USER}"
 
 RUN apt-get update \
- && apt-get install -y pkg-config libssl-dev
+  && apt-get install -y pkg-config libssl-dev
 
 RUN cargo new --bin jitsi-openid
 
@@ -25,7 +25,7 @@ COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
 RUN cargo build --release \
- && rm src/*.rs target/release/deps/jitsi_openid*
+  && rm src/*.rs target/release/deps/jitsi_openid*
 
 COPY ./src ./src
 RUN cargo build --release
