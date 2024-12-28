@@ -55,9 +55,9 @@ services:
       - "CLIENT_ID=meet.example.com" # <- OpenID Connect Client ID
       - "CLIENT_SECRET=SECURE_SECRET" # <- OpenID Connect Client secret
         # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
-        #    space seperated list of allowed actions (OPTIONAL), see
+        #    space separated list of allowed actions (OPTIONAL), see
         #    https://github.com/MarcelCoding/jitsi-openid/issues/122
-        # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space seperated list of scopes (OPTIONAL),
+        # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space separated list of scopes (OPTIONAL),
         #    default: openid email
         # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
         #    default: true
@@ -196,18 +196,14 @@ in
   services.jitsi-meet = {
     enable = true;
 
-    hostName = hostName;
-    nginx = {
-      enable = true;
-    };
+    inherit hostName;
+    nginx.enable = true;
     secureDomain = {
       enable = true;
       authentication = "token";
     };
 
-    config = {
-      tokenAuthUrl = "https://${ssoHostName}/room/{room}";
-    };
+    config.tokenAuthUrl = "https://${ssoHostName}/room/{room}";
   };
 
   services.prosody = {
@@ -229,14 +225,11 @@ in
     };
   };
 
-  systemd.services.prosody = {
-    environment = {
-      # the token_verification module has some more lua dependencies
-      LUA_PATH = "${pkgs.lua52Packages.basexx}/share/lua/5.2/?.lua;${pkgs.lua52Packages.cjson}/share/lua/5.2/?.lua;${pkgs.lua52Packages.luaossl}/share/lua/5.2/?.lua;${pkgs.lua52Packages.inspect}/share/lua/5.2/?.lua";
-      LUA_CPATH = "${pkgs.lua52Packages.cjson}/lib/lua/5.2/?.so;${pkgs.lua52Packages.luaossl}/lib/lua/5.2/?.so";
-    };
+  systemd.services.prosody.environment = {
+    # the token_verification module has some more lua dependencies
+    LUA_PATH = "${pkgs.lua52Packages.basexx}/share/lua/5.2/?.lua;${pkgs.lua52Packages.cjson}/share/lua/5.2/?.lua;${pkgs.lua52Packages.luaossl}/share/lua/5.2/?.lua;${pkgs.lua52Packages.inspect}/share/lua/5.2/?.lua";
+    LUA_CPATH = "${pkgs.lua52Packages.cjson}/lib/lua/5.2/?.so;${pkgs.lua52Packages.luaossl}/lib/lua/5.2/?.so";
   };
-
 }
 ```
 
