@@ -32,29 +32,28 @@ docker run \
 
 ### Docker Compose
 
-````yaml
+```yaml
 # docker-compose.yaml
 
 # ...
 
 services:
-
   # ...
 
   jitsi-openid:
     image: ghcr.io/marcelcoding/jitsi-openid:latest
     restart: always
     environment:
-      - 'JITSI_SECRET=SECURE_SECRET'             # <- shared with jitsi (JWT_APP_SECRET -> see .env from jitsi),
+      - "JITSI_SECRET=SECURE_SECRET" # <- shared with jitsi (JWT_APP_SECRET -> see .env from jitsi),
       #    secret to sign jwt tokens
-      - 'JITSI_URL=https://meet.example.com'     # <- external url of jitsi
-      - 'JITSI_SUB=meet.example.com'             # <- shared with jitsi (JWT_APP_ID -> see .env from jitsi),
+      - "JITSI_URL=https://meet.example.com" # <- external url of jitsi
+      - "JITSI_SUB=meet.example.com" # <- shared with jitsi (JWT_APP_ID -> see .env from jitsi),
       #    id of jitsi
-      - 'ISSUER_URL=https://id.example.com'      # <- base URL of your OpenID Connect provider
+      - "ISSUER_URL=https://id.example.com" # <- base URL of your OpenID Connect provider
       #    Keycloak: https://id.example.com/auth/realms/<realm>
-      - 'BASE_URL=https://auth.meet.example.com' # <- base URL of this application
-      - 'CLIENT_ID=meet.example.com'             # <- OpenID Connect Client ID
-      - 'CLIENT_SECRET=SECURE_SECRET'            # <- OpenID Connect Client secret
+      - "BASE_URL=https://auth.meet.example.com" # <- base URL of this application
+      - "CLIENT_ID=meet.example.com" # <- OpenID Connect Client ID
+      - "CLIENT_SECRET=SECURE_SECRET" # <- OpenID Connect Client secret
         # - 'ACR_VALUES=password email'              # <- OpenID Context Authentication Context Requirements,
         #    space seperated list of allowed actions (OPTIONAL), see
         #    https://github.com/MarcelCoding/jitsi-openid/issues/122
@@ -66,10 +65,9 @@ services:
         # - 'GROUP=example'                          # <- Value for the 'group' field in the token
       #    default: ''
     ports:
-      - '3000:3000'
-
+      - "3000:3000"
 # ...
-````
+```
 
 To generate the `JITSI_SECRET` you can use one of the following command:
 
@@ -129,7 +127,7 @@ services.jitsi-openid = {
 
 If you have problems understating this have a look here: https://github.com/MarcelCoding/jitsi-openid/issues/80
 
-````bash
+```bash
 # for more information see:
 # https://github.com/jitsi/docker-jitsi-meet/blob/master/env.example
 
@@ -155,7 +153,92 @@ JWT_ACCEPTED_AUDIENCES=jitsi
 # jitsi-openid should redirect the user after a successfully authentication
 # !! it is recommend to use ALWAYS https e.g. using a reverse proxy !!
 TOKEN_AUTH_URL=https://auth.meet.example.com/room/{room}
-````
+```
+
+### Jitsi Configuration NixOS
+
+The following NixOS config shows how to use JWT Auth with the jitsi NixOS module.
+The necessary steps where extracted form [docker-jitsi-meet](https://github.com/jitsi/docker-jitsi-meet):
+
+```nix
+{
+  pkgs,
+  config,
+  ...
+}:
+
+let
+  hostName = "meet.example.com";
+  ssoHostName = "auth-meet.example.com";
+  ssoPort = 3000;
+  ssoAddress = "127.0.0.1";
+  cfg = config.services.jitsi-meet;
+in
+{
+  networking.firewall.allowedUDPPorts = [ 10000 ]; # required for more then 2 participants
+
+  # this assumes jitsi openid is already running on the server on port 3000
+  # you could run it with e.g. virtualisation.oci-containers.containers
+  services.nginx.virtualHosts.${ssoHostName} = {
+    forceSSL = true;
+    enableACME = true;
+    locations = {
+      "/" = {
+        proxyPass = "http://${ssoAddress}:${toString ssoPort}";
+      };
+    };
+  };
+
+  nixpkgs.config.permittedInsecurePackages = [
+    "jitsi-meet-1.0.8043"
+  ];
+
+  services.jitsi-meet = {
+    enable = true;
+
+    hostName = hostName;
+    nginx = {
+      enable = true;
+    };
+    secureDomain = {
+      enable = true;
+      authentication = "token";
+    };
+
+    config = {
+      tokenAuthUrl = "https://${ssoHostName}/room/{room}";
+    };
+  };
+
+  services.prosody = {
+    extraModules = [
+      "token_verification"
+    ];
+
+    extraConfig = ''
+      asap_accepted_issuers = "jitsi"
+      asap_accepted_audiences = "jitsi"
+    '';
+
+    virtualHosts.${cfg.hostName} = {
+      # a secure secret should be used for production
+      extraConfig = ''
+        app_secret = "insecure_secret"
+        app_id = "jitsi"
+      '';
+    };
+  };
+
+  systemd.services.prosody = {
+    environment = {
+      # the token_verification module has some more lua dependencies
+      LUA_PATH = "${pkgs.lua52Packages.basexx}/share/lua/5.2/?.lua;${pkgs.lua52Packages.cjson}/share/lua/5.2/?.lua;${pkgs.lua52Packages.luaossl}/share/lua/5.2/?.lua;${pkgs.lua52Packages.inspect}/share/lua/5.2/?.lua";
+      LUA_CPATH = "${pkgs.lua52Packages.cjson}/lib/lua/5.2/?.so;${pkgs.lua52Packages.luaossl}/lib/lua/5.2/?.so";
+    };
+  };
+
+}
+```
 
 ### Jitsi JWTs
 
