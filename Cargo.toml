@@ -8,7 +8,7 @@ tokio = { version = "1.42", features = ["macros", "rt-multi-thread", "sync"], de
 openidconnect = { version = "3.5", features = ["reqwest", "rustls-tls"], default-features = false }
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi"], default-features = false }
 axum = { version = "0.7", features = ["tokio", "http1", "query"], default-features = false }
-axum-extra = { version = "0.9", features = ["cookie"], default-features = false }
+axum-extra = { version = "0.10", features = ["cookie"], default-features = false }
 anyhow = { version = "1.0", features = ["std"], default-features = false }
 uuid = { version = "1.11", features = ["v4"], default-features = false }
 jsonwebtoken = { version = "9.3", default-features = false }
