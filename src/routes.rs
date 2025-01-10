@@ -1,7 +1,7 @@
 use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
-use axum::{Extension, Router};
+use axum::Router;
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
 use jsonwebtoken::{EncodingKey, Header};
@@ -20,16 +20,16 @@ use uuid::Uuid;
 use crate::AppError::{AuthenticationContextWasNotFulfilled, IdTokenRequired};
 use crate::{
   AppError, Cfg, InternalServerError, InvalidAccessToken, InvalidCode, InvalidIdTokenNonce,
-  InvalidSession, InvalidState, JitsiSecret, JitsiState, MissingAccessTokenHash,
+  InvalidSession, InvalidState, JitsiState, MissingAccessTokenHash,
   MissingIdTokenAndUserInfoEndpoint, MyClaims, MyClient, MyTokenResponse, MyUserInfoClaims,
-  Session, Store, UnableToQueryUserInfo, UnsupportedSigningAlgorithm,
+  Session, UnableToQueryUserInfo, UnsupportedSigningAlgorithm,
 };
 
 const COOKIE_NAME: &str = "JITSI_OPENID_SESSION";
 
 pub(crate) fn build_routes() -> Router<JitsiState> {
   Router::new()
-    .route("/room/*name", get(room))
+    .route("/room/{name}", get(room))
     .route("/callback", get(callback))
 }
 
@@ -245,7 +245,7 @@ fn id_token_claims(
       .picture()
       .and_then(|x| x.get(None))
       .map(|x| x.to_string()),
-    moderator: claims.additional_claims().moderator.clone(),
+    moderator: claims.additional_claims().moderator,
   }))
 }
 
@@ -276,7 +276,7 @@ async fn user_info_claims(
           .picture()
           .and_then(|x| x.get(None))
           .map(|x| x.to_string()),
-        moderator: claims.additional_claims().moderator.clone(),
+        moderator: claims.additional_claims().moderator,
       }))
     }
     Err(ConfigurationError::MissingUrl(_)) => Ok(None),
