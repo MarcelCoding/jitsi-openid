@@ -1,6 +1,6 @@
 [package]
 name = "jitsi-openid"
-version = "2.0.15"
+version = "2.0.17"
 edition = "2021"
 
 [dependencies]
