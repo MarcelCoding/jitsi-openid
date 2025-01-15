@@ -14,8 +14,10 @@ RUN adduser \
   --uid "${UID}" \
   "${USER}"
 
-RUN apt-get update \
-  && apt-get install -y pkg-config libssl-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  pkg-config \
+  libssl-dev \
+  && rm -rf /var/lib/apt/lists/*
 
 RUN cargo new --bin jitsi-openid
 
@@ -37,6 +39,10 @@ EXPOSE 3000
 
 COPY --from=builder /etc/passwd /etc/passwd
 COPY --from=builder /etc/group /etc/group
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+  libssl3 \
+  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /jitsi-openid
 
