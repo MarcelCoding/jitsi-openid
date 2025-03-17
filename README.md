@@ -60,7 +60,7 @@ services:
         # - 'SCOPES=openid email jitsi'              # <- OpenID Scopes, space separated list of scopes (OPTIONAL),
         #    default: openid email
         # - 'VERIFY_ACCESS_TOKEN_HASH=false          # <- explicitly disable access token hash verification (OPTIONAL),
-        #    default: true
+        #    default: true                                See https://github.com/MarcelCoding/jitsi-openid/issues/372#issuecomment-2730510228
         # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
         # - 'GROUP=example'                          # <- Value for the 'group' field in the token
       #    default: ''
