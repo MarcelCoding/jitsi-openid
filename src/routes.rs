@@ -6,7 +6,6 @@ use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
 use jsonwebtoken::{EncodingKey, Header};
 use openidconnect::core::{CoreAuthenticationFlow, CoreGenderClaim};
-use openidconnect::reqwest::async_http_client;
 use openidconnect::{
   AccessTokenHash, AuthorizationCode, ConfigurationError, CsrfToken, IdTokenClaims, Nonce,
   OAuth2TokenResponse, PkceCodeChallenge, Scope, TokenResponse,
@@ -132,8 +131,12 @@ async fn callback(
   let response = state
     .client
     .exchange_code(callback.code)
+    .map_err(|err| {
+      error!("Configuration error: {:?}", err);
+      AppError::ConfigurationError
+    })?
     .set_pkce_verifier(session.pkce_verifier)
-    .request_async(async_http_client)
+    .request_async(&state.http_client)
     .await
     .map_err(|err| {
       warn!("Authentication failed, Invalid Code: {:?}", err);
@@ -141,7 +144,7 @@ async fn callback(
     })?;
 
   let jitsi_user = match id_token_claims(&state.config, &state.client, &response, &session.nonce)? {
-    None => match user_info_claims(&state.client, &response).await? {
+    None => match user_info_claims(&state.client, &state.http_client, &response).await? {
       None => return Err(MissingIdTokenAndUserInfoEndpoint),
       Some(user) => user,
     },
@@ -214,14 +217,23 @@ fn id_token_claims(
           UnsupportedSigningAlgorithm
         })?;
 
-        let actual_access_token_hash =
-          AccessTokenHash::from_token(response.access_token(), &algorithm).map_err(|err| {
-            warn!(
-              "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
-              err
-            );
-            UnsupportedSigningAlgorithm
-          })?;
+        let actual_access_token_hash = AccessTokenHash::from_token(
+          response.access_token(),
+          algorithm,
+          id_token
+            .signing_key(&client.id_token_verifier())
+            .map_err(|err| {
+              error!("Invalid Signing Key: {:?}", err);
+              AppError::InvalidSigningKey
+            })?,
+        )
+        .map_err(|err| {
+          warn!(
+            "Authentication failed, UnsupportedSigningAlgorithm: {:?}",
+            err
+          );
+          UnsupportedSigningAlgorithm
+        })?;
 
         if &actual_access_token_hash != expected_access_token_hash {
           return Err(InvalidAccessToken);
@@ -251,18 +263,15 @@ fn id_token_claims(
 
 async fn user_info_claims(
   client: &MyClient,
+  http_client: &reqwest::Client,
   response: &MyTokenResponse,
 ) -> Result<Option<JitsiUser>, AppError> {
   match client.user_info(response.access_token().clone(), None) {
     Ok(request) => {
-      let claims: MyUserInfoClaims =
-        request
-          .request_async(async_http_client)
-          .await
-          .map_err(|err| {
-            warn!("Authentication failed, UnableToQueryUserInfo: {:?}", err);
-            UnableToQueryUserInfo
-          })?;
+      let claims: MyUserInfoClaims = request.request_async(http_client).await.map_err(|err| {
+        warn!("Authentication failed, UnableToQueryUserInfo: {:?}", err);
+        UnableToQueryUserInfo
+      })?;
 
       Ok(Some(JitsiUser {
         id: match claims.preferred_username() {

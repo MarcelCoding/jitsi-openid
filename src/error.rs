@@ -15,6 +15,8 @@ pub(crate) enum AppError {
   InternalServerError,
   UnableToQueryUserInfo,
   AuthenticationContextWasNotFulfilled,
+  InvalidSigningKey,
+  ConfigurationError,
 }
 
 impl IntoResponse for AppError {
@@ -32,6 +34,8 @@ impl IntoResponse for AppError {
       Self::UnableToQueryUserInfo => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to Query User Info").into_response(),
       Self::IdTokenRequired => (StatusCode::INTERNAL_SERVER_ERROR, "An authentication context requirement is configured. To validate this requirement an id token is required ... no id token was provided").into_response(),
       Self::AuthenticationContextWasNotFulfilled => (StatusCode::BAD_REQUEST, "An authentication context requirement is configured. No one or not the correct one was fulfilled.").into_response(),
+      Self::InvalidSigningKey => (StatusCode::INTERNAL_SERVER_ERROR, "Invalid signing key").into_response(),
+    Self::ConfigurationError => (StatusCode::INTERNAL_SERVER_ERROR, "ConfigurationError").into_response() ,
     }
   }
 }

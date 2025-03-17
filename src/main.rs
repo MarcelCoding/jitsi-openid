@@ -4,14 +4,13 @@ use std::sync::Arc;
 use config::{Config, Environment};
 use openidconnect::core::{
   CoreAuthDisplay, CoreAuthPrompt, CoreErrorResponseType, CoreGenderClaim, CoreJsonWebKey,
-  CoreJsonWebKeyType, CoreJsonWebKeyUse, CoreJweContentEncryptionAlgorithm,
-  CoreJwsSigningAlgorithm, CoreProviderMetadata, CoreRevocableToken, CoreRevocationErrorResponse,
-  CoreTokenIntrospectionResponse, CoreTokenType,
+  CoreJweContentEncryptionAlgorithm, CoreJwsSigningAlgorithm, CoreProviderMetadata,
+  CoreRevocableToken, CoreRevocationErrorResponse, CoreTokenIntrospectionResponse, CoreTokenType,
 };
-use openidconnect::reqwest::async_http_client;
 use openidconnect::{
-  AdditionalClaims, Client, ClientSecret, CsrfToken, EmptyExtraTokenFields, IdTokenFields, Nonce,
-  PkceCodeVerifier, RedirectUrl, StandardErrorResponse, StandardTokenResponse, UserInfoClaims,
+  AdditionalClaims, Client, ClientSecret, CsrfToken, EmptyExtraTokenFields, EndpointMaybeSet,
+  EndpointNotSet, EndpointSet, IdTokenFields, Nonce, PkceCodeVerifier, RedirectUrl,
+  StandardErrorResponse, StandardTokenResponse, UserInfoClaims,
 };
 use serde::{self};
 use serde::{Deserialize, Serialize};
@@ -62,7 +61,6 @@ type MyIdTokenFields = IdTokenFields<
   CoreGenderClaim,
   CoreJweContentEncryptionAlgorithm,
   CoreJwsSigningAlgorithm,
-  CoreJsonWebKeyType,
 >;
 
 type MyTokenResponse = StandardTokenResponse<MyIdTokenFields, CoreTokenType>;
@@ -72,17 +70,19 @@ type MyClient = Client<
   CoreAuthDisplay,
   CoreGenderClaim,
   CoreJweContentEncryptionAlgorithm,
-  CoreJwsSigningAlgorithm,
-  CoreJsonWebKeyType,
-  CoreJsonWebKeyUse,
   CoreJsonWebKey,
   CoreAuthPrompt,
   StandardErrorResponse<CoreErrorResponseType>,
   MyTokenResponse,
-  CoreTokenType,
   CoreTokenIntrospectionResponse,
   CoreRevocableToken,
   CoreRevocationErrorResponse,
+  EndpointSet,
+  EndpointNotSet,
+  EndpointNotSet,
+  EndpointNotSet,
+  EndpointMaybeSet,
+  EndpointMaybeSet,
 >;
 
 #[derive(Clone)]
@@ -91,6 +91,7 @@ pub(crate) struct JitsiState {
   client: MyClient,
   config: Cfg,
   jitsi_secret: JitsiSecret,
+  http_client: reqwest::Client,
 }
 
 #[tokio::main]
@@ -123,8 +124,14 @@ async fn main() -> anyhow::Result<()> {
     *config.client_id
   );
 
+  let http_client = reqwest::ClientBuilder::new()
+    // Following redirects opens the client up to SSRF vulnerabilities.
+    .redirect(reqwest::redirect::Policy::none())
+    .build()
+    .expect("Client should build");
+
   let provider_metadata: CoreProviderMetadata =
-    CoreProviderMetadata::discover_async(config.issuer_url.clone(), async_http_client).await?;
+    CoreProviderMetadata::discover_async(config.issuer_url.clone(), &http_client).await?;
 
   let client_secret = config
     .client_secret
@@ -165,6 +172,7 @@ async fn main() -> anyhow::Result<()> {
     client,
     config: config.clone(),
     jitsi_secret: jitsi_secret.clone(),
+    http_client,
   });
 
   let listener = TcpListener::bind(config.listen_addr).await?;
