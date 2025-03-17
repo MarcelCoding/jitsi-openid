@@ -26,7 +26,7 @@ impl IntoResponse for AppError {
       Self::InvalidIdTokenNonce(err) => (StatusCode::BAD_REQUEST, format!("Invalid Id Token Nonce: {}", err)).into_response(),
       Self::MissingIdTokenAndUserInfoEndpoint => (StatusCode::BAD_REQUEST, "Missing Id Token And User Info Endpoint - at least one is missing, you may create an issue to find an workaround if you can't configure your idp to provide either of them: https://github.com/MarcelCoding/jitsi-openid/issues/new").into_response(),
       Self::InvalidAccessToken => (StatusCode::BAD_REQUEST, "Invalid Access Token").into_response(),
-      Self::MissingAccessTokenHash => (StatusCode::BAD_REQUEST, "Missing Access Token Hash - if you can't configure your IDP to provide an access token hash (delivered using the id token), reach out to me to implement some kind of workaround: https://github.com/MarcelCoding/jitsi-openid/issues/new").into_response(),
+      Self::MissingAccessTokenHash => (StatusCode::BAD_REQUEST, "Missing Access Token Hash - see https://github.com/MarcelCoding/jitsi-openid/issues/372#issuecomment-2730510228 for more information how to handle this").into_response(),
       Self::UnsupportedSigningAlgorithm => (StatusCode::BAD_REQUEST, "Unsupported Signing Algorithm").into_response(),
       Self::InternalServerError => (StatusCode::INTERNAL_SERVER_ERROR, "Internal Server Error").into_response(),
       Self::UnableToQueryUserInfo => (StatusCode::INTERNAL_SERVER_ERROR, "Unable to Query User Info").into_response(),
