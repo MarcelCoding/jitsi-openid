@@ -192,8 +192,15 @@ fn id_token_claims(
     }
   };
 
+  let id_token_verifier = if config.accept_unknown_audiences.unwrap_or(false) {
+    client
+      .id_token_verifier()
+      .set_other_audience_verifier_fn(|_aud| true)
+  } else {
+    client.id_token_verifier()
+  };
   let claims = id_token
-    .claims(&client.id_token_verifier(), nonce)
+    .claims(&id_token_verifier, nonce)
     .map_err(InvalidIdTokenNonce)?;
 
   if let Some(acr_values) = &config.acr_values {
