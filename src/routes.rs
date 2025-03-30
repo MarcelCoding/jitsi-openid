@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
@@ -196,6 +198,17 @@ fn id_token_claims(
     client
       .id_token_verifier()
       .set_other_audience_verifier_fn(|_aud| true)
+  } else if config.accepted_audiences.is_some() {
+    client
+      .id_token_verifier()
+      .set_other_audience_verifier_fn(|aud| {
+        config
+          .accepted_audiences
+          .as_ref()
+          .unwrap()
+          .iter()
+          .any(|a| (**aud).deref() == (*a).deref())
+      })
   } else {
     client.id_token_verifier()
   };

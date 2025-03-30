@@ -167,6 +167,10 @@ async fn main() -> anyhow::Result<()> {
       .expect("Jitsi secret not specified."),
   );
 
+  if config.accept_unknown_audiences.is_some() && config.accepted_audiences.is_some() {
+    panic!("The options ACCEPT_UNKNOWN_AUDIENCES and ACCEPTED_AUTIDENCES are mutually exclusive.");
+  }
+
   let app = build_routes().with_state(JitsiState {
     store,
     client,
