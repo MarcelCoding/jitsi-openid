@@ -194,11 +194,7 @@ fn id_token_claims(
     }
   };
 
-  let id_token_verifier = if config.accept_unknown_audiences.unwrap_or(false) {
-    client
-      .id_token_verifier()
-      .set_other_audience_verifier_fn(|_aud| true)
-  } else if config.accepted_audiences.is_some() {
+  let id_token_verifier = if config.accepted_audiences.is_some() {
     client
       .id_token_verifier()
       .set_other_audience_verifier_fn(|aud| {

@@ -66,8 +66,6 @@ services:
         #    default: ''
         # - 'ACCEPTED_AUDIENCES=3431062967253980'    # <- provide a list of additional audiences that are accepted in the ID token, separated by space
         #    default: ''                             # (the CLIENT_ID is implicitly accepted and need not be listed here)
-        # - 'ACCEPT_UNKNOWN_AUDIENCES=true'          # <- accept all additional audiences in the ID token (USE WITH CARE!)
-        #    default: false                          # (if set to true, ACCEPTED_AUDIENCES must not be set)
     ports:
       - "3000:3000"
 # ...
