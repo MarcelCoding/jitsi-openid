@@ -192,8 +192,11 @@ fn id_token_claims(
     }
   };
 
+  let id_token_verifier = client
+    .id_token_verifier()
+    .set_other_audience_verifier_fn(|_aud| true);
   let claims = id_token
-    .claims(&client.id_token_verifier(), nonce)
+    .claims(&id_token_verifier, nonce)
     .map_err(InvalidIdTokenNonce)?;
 
   if let Some(acr_values) = &config.acr_values {

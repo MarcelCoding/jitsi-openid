@@ -63,7 +63,7 @@ services:
         #    default: true                                See https://github.com/MarcelCoding/jitsi-openid/issues/372#issuecomment-2730510228
         # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
         # - 'GROUP=example'                          # <- Value for the 'group' field in the token
-      #    default: ''
+        #    default: ''
     ports:
       - "3000:3000"
 # ...
