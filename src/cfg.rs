@@ -34,9 +34,6 @@ pub(crate) struct Cfg {
   pub(crate) skip_prejoin_screen: Option<bool>,
   #[serde(default)]
   pub(crate) group: String,
-  #[serde(default)]
-  #[serde(deserialize_with = "string_array2")]
-  pub(crate) accepted_audiences: Option<Vec<String>>,
 }
 
 fn default_listen_addr() -> SocketAddr {

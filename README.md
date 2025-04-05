@@ -64,8 +64,6 @@ services:
         # - 'SKIP_PREJOIN_SCREEN=false'              # <- skips the jitsi prejoin screen after login (default: true)
         # - 'GROUP=example'                          # <- Value for the 'group' field in the token
         #    default: ''
-        # - 'ACCEPTED_AUDIENCES=3431062967253980'    # <- provide a list of additional audiences that are accepted in the ID token, separated by space
-        #    default: ''                             # (the CLIENT_ID is implicitly accepted and need not be listed here)
     ports:
       - "3000:3000"
 # ...

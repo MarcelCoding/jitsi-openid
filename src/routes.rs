@@ -1,5 +1,3 @@
-use std::ops::Deref;
-
 use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Redirect};
 use axum::routing::get;
@@ -194,20 +192,9 @@ fn id_token_claims(
     }
   };
 
-  let id_token_verifier = if config.accepted_audiences.is_some() {
-    client
-      .id_token_verifier()
-      .set_other_audience_verifier_fn(|aud| {
-        config
-          .accepted_audiences
-          .as_ref()
-          .unwrap()
-          .iter()
-          .any(|a| (**aud).deref() == (*a).deref())
-      })
-  } else {
-    client.id_token_verifier()
-  };
+  let id_token_verifier = client
+    .id_token_verifier()
+    .set_other_audience_verifier_fn(|_aud| true);
   let claims = id_token
     .claims(&id_token_verifier, nonce)
     .map_err(InvalidIdTokenNonce)?;
