@@ -104,22 +104,18 @@ cat /dev/urandom | tr -dc a-zA-Z0-9 | head -c128; echo
 # for an explanation see docker compose setup
 services.jitsi-openid = {
   enable = true;
-  settings = {
-    package = pkgs.jitsi-openid;
-    enable = true;
-    listen = {
-      addr = "::1";
-      port = 6031;
-    };
-    jitsiSecretFile = "/run/secrets/jitsi-secret-file";
-    jitsiUrl = "https://meet.domain.tld";
-    jitsiSub = "meet.domain.tld";
-    issuerUrl = "https://auth.domain.tld";
-    baseUrl = "https://auth.meet.domain.tld";
-    clientId = "auth.meet.domain.tld";
-    clientSecretFile = "/run/secrets/client-secret-file";
-    openFirewall = false;
+  listen = {
+    addr = "::1";
+    port = 6031;
   };
+  jitsiSecretFile = "/run/secrets/jitsi-secret-file";
+  jitsiUrl = "https://meet.domain.tld";
+  jitsiSub = "meet.domain.tld";
+  issuerUrl = "https://auth.domain.tld";
+  baseUrl = "https://auth.meet.domain.tld";
+  clientId = "auth.meet.domain.tld";
+  clientSecretFile = "/run/secrets/client-secret-file";
+  openFirewall = false;
 };
 ```
 
