@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "rustls-tls-native-roots"] }
-tokio = { version = "1.44", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
+tokio = { version = "1.45", features = ["macros", "rt-multi-thread", "sync"], default-features = false }
 openidconnect = { version = "4.0", features = ["reqwest", "rustls-tls"], default-features = false }
 tracing-subscriber = { version = "0.3", features = ["fmt", "ansi"], default-features = false }
 axum = { version = "0.8", features = ["tokio", "http1", "query"], default-features = false }
